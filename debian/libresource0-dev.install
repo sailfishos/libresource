@@ -1,0 +1,3 @@
+usr/include/resource/*
+usr/lib/pkgconfig/*
+usr/lib/*.la

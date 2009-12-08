@@ -1,0 +1,38 @@
+Source: libresource
+Priority: optional
+Maintainer: Janos Kovacs <janos.f.kovacs@nokia.com>
+Build-Depends: debhelper (>= 4), autotools-dev, pkg-config, libdbus-1-dev, libdbus-glib-1-dev
+Standards-Version: 0.1.0
+Section: libs
+
+Package: libresource0-dev
+Section: libdevel
+Architecture: any
+Depends: libresource0 (= ${binary:Version}), pkg-config, libdbus-1-dev
+Description: Maemo resource management development files
+ Resource management for Maemo (development files).
+
+Package: libresource0
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, dbus
+Description: Maemo resource management client library
+ Resource management for Maemo.
+
+Package: resource-client
+Section: utils
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Mamemo resource aware client test example
+ Resource management for Mamemo
+ This is a simple test tool to play with resource management.
+
+Package: libresource0-dbg
+Section: libdevel
+Priority: extra
+Architecture: any
+Depends: libresource0 (= ${binary:Version})
+Description: Maemo resource management client library debug symbols.
+ Resource management for Maemo.
+
+
