@@ -1,6 +1,6 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
-AC_PREREQ(2.61)
+AC_PREREQ(2.59)
 
 
 m4_define(TDIR, esyscmd(/bin/bash -c pwd | tr \\n /))
