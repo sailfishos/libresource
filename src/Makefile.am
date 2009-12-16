@@ -1,7 +1,7 @@
 libdir = ${src_dir}
 lib_LTLIBRARIES = libresource.la
 
-libresource_la_SOURCES = resource.c resmsg.c
+libresource_la_SOURCES = resource.c resmsg.c resproto.c dbus.c
 libresource_la_CFLAGS = @DBUS_CFLAGS@ -I$(top_srcdir)
 if DEBUG
 libresource_la_CFLAGS += -D__DEBUG__
