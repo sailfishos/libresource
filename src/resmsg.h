@@ -25,7 +25,8 @@ typedef enum {
 
     RESMSG_MAX,
 
-    RESMSG_STATUS = RESMSG_MAX
+    RESMSG_STATUS = RESMSG_MAX,
+    RESMSG_TRANSPORT_START,
 } resmsg_type_t;
 
 typedef struct {
@@ -63,6 +64,7 @@ typedef struct {
     int32_t           errcod;    /* error code, if any */
     const char       *errmsg;    /* error message, if any */
 } resmsg_status_t;
+
 
 typedef union {
     resmsg_type_t     type;

@@ -2,31 +2,17 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "resproto.h"
 #include "dbus.h"
 
 
 /* 
  * local function prototypes
  */
-static resproto_rset_t *rset_create(resproto_dbus_t *, const char *,
-                                    uint32_t, resproto_rset_state_t);
-static void             rset_destroy(resproto_rset_t *);
-static void             rset_ref(resproto_rset_t *);
-static void             rset_unref(resproto_rset_t *);
-static resproto_rset_t *rset_find(resproto_dbus_t *, const char *, uint32_t);
-
-static resproto_reply_t *reply_create(resmsg_type_t, uint32_t, uint32_t,
-                                      resproto_rset_t *, resproto_status_t);
-static void              reply_destroy(void *);
-
-
-static resproto_rset_t *connect_to_manager(resproto_t *, resmsg_t*);
-static resproto_rset_t *connect_fail(resproto_t *, resmsg_t *);
-static int              send_message(resproto_rset_t *, resmsg_t *,
-                                     resproto_status_t);
-static int              send_error(resproto_rset_t *, resmsg_t *, void *);
-static void             status_method(DBusPendingCall *, void *);
+static resset_t *connect_to_manager(resproto_t *, resmsg_t*);
+static resset_t *connect_fail(resproto_t *, resmsg_t *);
+static int       send_message(resset_t *, resmsg_t *, resproto_status_t);
+static int       send_error(resset_t *, resmsg_t *, void *);
+static void      status_method(DBusPendingCall *, void *);
 
 static resproto_t *find_resproto(DBusConnection *);
 
@@ -63,7 +49,7 @@ int resproto_dbus_manager_init(resproto_dbus_t *rp, va_list args)
         register_manager_object(rp)                                          )
     {
         rp->connect = connect_fail;
-        rp->disconn = rset_destroy;
+        rp->disconn = resset_destroy;
         rp->send    = send_message;
         rp->error   = send_error;
         rp->dbusid  = strdup(name);
@@ -96,7 +82,7 @@ int resproto_dbus_client_init(resproto_dbus_t *rp, va_list args)
         snprintf(path, sizeof(path), RESPROTO_DBUS_CLIENT_PATH, client_no++);
         
         rp->connect = connect_to_manager;
-        rp->disconn = rset_destroy;
+        rp->disconn = resset_destroy;
         rp->send    = send_message;
         rp->error   = send_error;
         rp->dbusid  = strdup(name);
@@ -108,19 +94,19 @@ int resproto_dbus_client_init(resproto_dbus_t *rp, va_list args)
     return success;
 }
 
-static resproto_rset_t *connect_to_manager(resproto_t *rp, resmsg_t *resmsg)
+static resset_t *connect_to_manager(resproto_t *rp, resmsg_t *resmsg)
 {
-    char            *name = RESPROTO_DBUS_MANAGER_NAME;
-    uint32_t         id   = resmsg->any.id;
-    resproto_rset_t *rset;
+    char     *name = RESPROTO_DBUS_MANAGER_NAME;
+    uint32_t  id   = resmsg->any.id;
+    resset_t *rset;
 
-    if ((rset = rset_find(&rp->dbus, name, id)) == NULL)
-        rset = rset_create(&rp->dbus, name, id, RESPROTO_RSET_STATE_CREATED);
+    if ((rset = resset_find(rp, name, id)) == NULL)
+        rset = resset_create(rp, name, id, RESPROTO_RSET_STATE_CREATED);
 
     return rset;
 }
 
-static resproto_rset_t *connect_fail(resproto_t *rp, resmsg_t *resmsg)
+static resset_t *connect_fail(resproto_t *rp, resmsg_t *resmsg)
 {
     (void)rp;
     (void)resmsg;
@@ -128,7 +114,7 @@ static resproto_rset_t *connect_fail(resproto_t *rp, resmsg_t *resmsg)
     return NULL;
 }
 
-static int send_message(resproto_rset_t   *rset,
+static int send_message(resset_t          *rset,
                         resmsg_t          *resmsg,
                         resproto_status_t  status)
 {
@@ -199,15 +185,16 @@ static int send_message(resproto_rset_t   *rset,
                 type   = resmsg->type;
                 serial = dbus_message_get_serial(dbusmsg);
                 reqno  = resmsg->any.reqno;
-                reply  = reply_create(type, serial, reqno, rset, status);
+                reply  = resproto_reply_create(type,serial,reqno,rset,status);
 
                 success = dbus_pending_call_set_notify(pend, status_method,
-                                                       reply, reply_destroy);
+                                                       reply,
+                                                       resproto_reply_destroy);
             } while(0);
         }
 
         if (success)
-            rset_ref(rset);
+            resset_ref(rset);
 
         dbus_message_unref(dbusmsg);
     }
@@ -215,7 +202,7 @@ static int send_message(resproto_rset_t   *rset,
     return success;
 }
 
-static int send_error(resproto_rset_t *rset, resmsg_t *resreply, void *data)
+static int send_error(resset_t *rset, resmsg_t *resreply, void *data)
 {
     resproto_t     *rp        = rset->resproto;
     DBusConnection *conn      = rp->dbus.conn; 
@@ -235,7 +222,7 @@ static void status_method(DBusPendingCall *pend, void *data)
 {
     resproto_reply_t *reply   = (resproto_reply_t *)data;
     DBusMessage      *dbusmsg = dbus_pending_call_steal_reply(pend);
-    resproto_rset_t  *rset;
+    resset_t         *rset;
     resproto_t       *rp;
     resmsg_t          resmsg;
     const char       *errmsg;
@@ -288,7 +275,7 @@ static void status_method(DBusPendingCall *pend, void *data)
 
             case RESMSG_UNREGISTER:
                 if (resmsg.status.errcod) {
-                    rset_ref(rset);
+                    resset_ref(rset);
                     rset->state = RESPROTO_RSET_STATE_CONNECTED;
                 }
                 break;
@@ -301,7 +288,7 @@ static void status_method(DBusPendingCall *pend, void *data)
         if (reply->callback != NULL)
             reply->callback(rset, &resmsg);
 
-        rset_unref(rset);
+        resset_unref(rset);
     }
 
     if (dbusmsg)
@@ -310,163 +297,6 @@ static void status_method(DBusPendingCall *pend, void *data)
     dbus_pending_call_unref(pend);
 }
 
-
-static resproto_rset_t *rset_create(resproto_dbus_t       *rp,
-                                    const char            *peer,
-                                    uint32_t               id,
-                                    resproto_rset_state_t  state)
-{
-    resproto_rset_t *rset;
-
-    if ((rset = malloc(sizeof(resproto_rset_t))) != NULL) {
-    
-        memset(rset, 0, sizeof(resproto_rset_t));
-        rset->next     = rp->rsets;
-        rset->refcnt   = 1;
-        rset->resproto = (resproto_t *)rp;
-        rset->peer     = strdup(peer);
-        rset->id       = id;
-        rset->state    = state;
-
-        rp->rsets  = rset;
-    }
-
-    return rset;
-}
-
-static void rset_destroy(resproto_rset_t *rset)
-{
-    if (rset && rset->state != RESPROTO_RSET_STATE_KILLED) {
-        rset->state = RESPROTO_RSET_STATE_KILLED;
-        rset_unref(rset);
-    }
-}
-
-static void rset_ref(resproto_rset_t *rset)
-{
-    if (rset != NULL)
-        rset->refcnt++;
-}
- 
-static void rset_unref(resproto_rset_t *rset)
-{
-    resproto_dbus_t  *rp = &rset->resproto->dbus;
-    resproto_rset_t  *prev;
-    resproto_reply_t *reply;
-    resproto_reply_t *next;
-    resmsg_t          resmsg;
-
-    if (rset != NULL && --rset->refcnt <= 0) {
-
-#if 0
-        /* generate error replies for the hanging requests */
-        memset(&resmsg, 0, sizeof(resmsg));
-        resmsg.status.type   = RESMSG_STATUS;
-        resmsg.status.id     = rset->id;
-        resmsg.status.errcod = -1;
-        resmsg.status.errmsg = "DBus.Error.ServiceIsDown";
-
-        for (reply = rp->replies;  reply;   reply = next) {
-            next = reply->next;
-
-            if (reply->rset == rset) {
-                
-                if (reply->callback) {
-                    resmsg.status.reqno = reply->reqno;
-                    reply->callback(rset, &resmsg);
-                }
-
-                reply_destroy(reply);
-            }
-        }
-#endif
- 
-        /* now extinct the rset */
-       for (prev = (resproto_rset_t *)&rp->rsets;
-            prev->next != NULL;
-            prev = prev->next)
-        {
-            if (prev->next == rset) {
-                prev->next = rset->next;
-                
-                free(rset->peer);
-                free(rset);
-                
-                break;
-            }
-        }
-    }
-}
-
-static resproto_rset_t *rset_find(resproto_dbus_t *rp, 
-                                  const char      *peer,
-                                  uint32_t         id)
-{
-    resproto_rset_t *rset;
-
-    for (rset = rp->rsets;   rset != NULL;   rset = rset->next) {
-        if (!strcmp(peer, rset->peer) && id == rset->id)
-            break;
-    }
-
-    return rset;
-}
-
-
-static resproto_reply_t *reply_create(resmsg_type_t       type,
-                                      uint32_t            serial,
-                                      uint32_t            reqno,
-                                      resproto_rset_t    *rset,
-                                      resproto_status_t   status)
-{
-    resproto_dbus_t  *rp = &rset->resproto->dbus;
-    resproto_reply_t *reply;
-    resproto_reply_t *last;
-
-    for (last = (resproto_reply_t*)&rp->replies; last->next; last = last->next)
-        ;
-
-    if ((reply = malloc(sizeof(resproto_reply_t))) != NULL) {
-        memset(reply, 0, sizeof(resproto_reply_t));
-        reply->type     = type;
-        reply->serial   = serial;
-        reply->reqno    = reqno;
-        reply->callback = status;
-        reply->rset     = rset;
-                
-        last->next = reply;
-    }
-
-    return reply;
-}
-
-
-static void reply_destroy(void *ptr)
-{
-    resproto_reply_t *reply = (resproto_reply_t *)ptr;
-    resproto_rset_t  *rset;
-    resproto_t       *rp;
-    resproto_reply_t *prev;
-
-    if (ptr != NULL) {
-        if ((rset  = reply->rset   ) != NULL &&
-            (rp    = rset->resproto) != NULL    )
-        {
-            for (prev = (resproto_reply_t *)&rp->any.replies;
-                 prev->next != NULL;
-                 prev = prev->next)
-            {
-                if (prev->next == reply) {
-                    prev->next  = reply->next;
-                    reply->next = NULL;
-                    break;
-                }
-            }
-        }
-
-        free(reply);
-    }    
-}
 
 static resproto_t *find_resproto(DBusConnection *conn)
 {
@@ -678,14 +508,14 @@ static DBusHandlerResult manager_method(DBusConnection *conn,
 {
     (void)user_data;
 
-    int               type      = dbus_message_get_type(dbusmsg);
-    const char       *interface = dbus_message_get_interface(dbusmsg);
-    const char       *member    = dbus_message_get_member(dbusmsg);
-    const char       *sender    = dbus_message_get_sender(dbusmsg);
-    resmsg_t          resmsg;
-    resproto_t       *rp;
-    resproto_rset_t  *rset;
-    char             *method;
+    int         type      = dbus_message_get_type(dbusmsg);
+    const char *interface = dbus_message_get_interface(dbusmsg);
+    const char *member    = dbus_message_get_member(dbusmsg);
+    const char *sender    = dbus_message_get_sender(dbusmsg);
+    resmsg_t    resmsg;
+    resproto_t *rp;
+    resset_t   *rset;
+    char       *method;
 
 
     if (strcmp(interface, RESPROTO_DBUS_MANAGER_INTERFACE) ||
@@ -712,8 +542,8 @@ static DBusHandlerResult manager_method(DBusConnection *conn,
 
 
             if (resmsg.type == RESMSG_REGISTER) {
-                rset = rset_create(&rp->dbus, sender, resmsg.any.id,
-                                   RESPROTO_RSET_STATE_CONNECTED);
+                rset = resset_create(rp, sender, resmsg.any.id,
+                                     RESPROTO_RSET_STATE_CONNECTED);
 
                 if (rset != NULL) {
                     dbus_message_ref(dbusmsg);
