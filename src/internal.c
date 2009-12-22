@@ -21,10 +21,17 @@ static resset_t *connect_fail(resproto_t *, resmsg_t *);
 static int  send_message(resset_t *, resmsg_t *, resproto_status_t);
 static int  send_error_init(resset_t *, resmsg_t *, void *);
 static int  send_error_complete(void *);
-static void receive_message(resproto_internal_t *, resproto_internal_t *,
-                            uint32_t, resmsg_t *);
+static void receive_message_init(resproto_internal_t *, char *,
+                                 uint32_t, resmsg_t *);
+static int  receive_message_dequeue(void *);
+static void receive_message_complete(resproto_internal_t *,resproto_qitem_t *);
 
 static resproto_internal_t *find_resproto_client(resset_t *);
+
+static int queue_is_empty(resproto_qhead_t *);
+static void queue_append_item(resproto_qhead_t *, resproto_qitem_t *);
+static resproto_qitem_t *queue_pop_item(resproto_qhead_t *);
+
 
 int resproto_internal_manager_init(resproto_internal_t *rp, va_list args)
 {
@@ -42,6 +49,8 @@ int resproto_internal_manager_init(resproto_internal_t *rp, va_list args)
         rp->send      = send_message;
         rp->error     = send_error_init;
         rp->name      = strdup(RESPROTO_INTERNAL_MANAGER);
+        rp->queue.head.next = (resproto_qitem_t *)&rp->queue.head;
+        rp->queue.head.prev = (resproto_qitem_t *)&rp->queue.head;
         rp->timer.add = timer_add;
         rp->timer.del = timer_del;
 
@@ -65,6 +74,8 @@ int resproto_internal_client_init(resproto_internal_t *rp, va_list args)
     rp->error     = send_error_init;
     rp->mgrup     = mgrup;
     rp->name      = strdup(name);
+    rp->queue.head.next = (resproto_qitem_t *)&rp->queue.head;
+    rp->queue.head.prev = (resproto_qitem_t *)&rp->queue.head;
     rp->timer.add = timer_add;
     rp->timer.del = timer_del;
   
@@ -73,12 +84,14 @@ int resproto_internal_client_init(resproto_internal_t *rp, va_list args)
 
 static resset_t *connect_to_manager(resproto_t *rp, resmsg_t *resmsg)
 {
-    char     *name = RESPROTO_INTERNAL_MANAGER;
-    uint32_t  id   = resmsg->any.id;
-    resset_t *rset;
+    char          *name = RESPROTO_INTERNAL_MANAGER;
+    uint32_t       id   = resmsg->any.id;
+    resmsg_rset_t *flags = &resmsg->record.rset;
+    resset_t      *rset;
 
     if ((rset = resset_find(rp, name, id)) == NULL)
-        rset = resset_create(rp, name, id, RESPROTO_RSET_STATE_CREATED);
+        rset = resset_create(rp, name, id, RESPROTO_RSET_STATE_CREATED,
+                             flags->all, flags->share, flags->opt);
 
     return rset;
 }
@@ -154,7 +167,11 @@ static int send_message(resset_t          *rset,
             }
         }
 
-        receive_message(receiver, rp, serial, resmsg);
+        rp->busy = TRUE;
+
+        receive_message_init(receiver, rp->name, serial, resmsg);
+
+        rp->busy = FALSE;
     }
     
     return success;
@@ -177,7 +194,7 @@ static int send_error_init(resset_t *rset, resmsg_t *resreply, void *data)
         if (resreply->status.errmsg)
             strncpy(std->errmsg,resreply->status.errmsg,sizeof(std->errmsg)-1);
 
-        rp->timer.add(0, send_error_complete,std);
+        rp->timer.add(0, send_error_complete, std);
 
         success = TRUE;
     }
@@ -237,6 +254,8 @@ static int send_error_complete(void *data)
                     
                     reply->callback(rset, &resmsg);
                 }
+
+                resproto_reply_destroy(reply);
             }
 
             break;
@@ -249,22 +268,82 @@ static int send_error_complete(void *data)
 }
 
 
-static void receive_message(resproto_internal_t *rp,
-                            resproto_internal_t *sender,
-                            uint32_t             serial,
-                            resmsg_t            *resmsg)
+static void receive_message_init(resproto_internal_t *rp,
+                                 char                *peer,
+                                 uint32_t             serial,
+                                 resmsg_t            *msg)
 {
-    resset_t *rset;
+    void *data;
+    int queue_was_empty;
+    resproto_qitem_t  buf;
+    resproto_qitem_t *item;
+    resmsg_rset_t *flags;
+    
 
-    if (!(rset = resset_find((resproto_t*)rp, sender->name, resmsg->any.id))) {
-        if (resmsg->type == RESMSG_REGISTER) {
-            rset = resset_create((resproto_t*)rp, sender->name, resmsg->any.id,
-                                 RESPROTO_RSET_STATE_CONNECTED);
+
+    data  = (void *)serial;
+    queue_was_empty = queue_is_empty(&rp->queue.head);
+
+    if (msg->type == RESMSG_REGISTER) {
+        flags = &msg->record.rset;
+
+        if ((resset_find((resproto_t*)rp, peer, msg->any.id)) == NULL) {
+            resset_create((resproto_t*)rp, peer, msg->any.id,
+                          RESPROTO_RSET_STATE_CONNECTED,
+                          flags->all, flags->share, flags->opt);
         }
     }
 
-    if (rset)
-        rp->receive(resmsg, rset, (void *)serial);
+    if (rp->busy || !queue_was_empty) {
+        if ((item = malloc(sizeof(resproto_qitem_t))) != NULL) {
+            memset(item, 0, sizeof(resproto_qitem_t));
+            item->peer = strdup(peer);
+            item->data = data;
+            item->msg = resmsg_copy_internal_message(msg);
+
+            queue_append_item(&rp->queue.head, item);
+
+            rp->queue.timer = rp->timer.add(0, receive_message_dequeue, rp);
+        }
+    }
+    else {
+        item = &buf;
+
+        memset(item, 0, sizeof(resproto_qitem_t));
+        item->peer = peer;
+        item->data = data;
+        item->msg  = msg;
+
+        receive_message_complete(rp, item);
+    }
+}
+
+static int receive_message_dequeue(void *data)
+{
+    resproto_internal_t *rp = (resproto_internal_t *)data;
+    resproto_qitem_t    *item;
+
+    if ((item = queue_pop_item(&rp->queue.head)) != NULL) {
+
+        receive_message_complete(rp, item);
+
+        free(item->peer);
+        resmsg_destroy_internal_message(item->msg);
+        free(item);
+    }
+
+    return FALSE;
+}
+
+static void receive_message_complete(resproto_internal_t *rp,
+                                     resproto_qitem_t    *item)
+{
+    resmsg_t *msg  = item->msg;
+    resset_t *rset = resset_find((resproto_t*)rp, item->peer, msg->any.id);
+    
+    if (rset != NULL){
+        rp->receive(msg, rset, item->data);
+    }    
 }
 
 
@@ -284,6 +363,46 @@ static resproto_internal_t *find_resproto_client(resset_t *rset)
     return &rp->internal;
 }
 
+static int queue_is_empty(resproto_qhead_t *queue)
+{
+    return (queue->next == (resproto_qitem_t *)queue) ? TRUE : FALSE;
+}
+
+static void queue_append_item(resproto_qhead_t *queue, resproto_qitem_t *item)
+{
+    resproto_qitem_t *prev;
+    resproto_qitem_t *next;
+
+    if (queue && item) {
+        prev = queue->prev;
+        next = prev->next;
+        
+        item->next = next;
+        item->prev = prev;
+        
+        prev->next = item;
+        next->prev = item;
+    }
+}
+
+static resproto_qitem_t *queue_pop_item(resproto_qhead_t *queue)
+{
+    resmsg_t         *msg = NULL;
+    resproto_qitem_t *item;
+    resproto_qitem_t *prev;
+    resproto_qitem_t *next;
+
+    if (queue != NULL && !queue_is_empty(queue)) {
+        item = queue->next;
+        prev = item->prev;
+        next = item->next;
+
+        prev->next = item->next;
+        next->prev = item->prev;
+    }
+
+    return item;
+}
 
 
 /* 

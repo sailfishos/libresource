@@ -8,19 +8,25 @@
 resset_t *resset_create(resproto_t    *rp,
                         const char    *peer,
                         uint32_t       id,
-                        resset_state_t state)
+                        resset_state_t state,
+                        uint32_t       all,
+                        uint32_t       share,
+                        uint32_t       opt)
 {
     resset_t *rset;
 
     if ((rset = malloc(sizeof(resset_t))) != NULL) {
     
         memset(rset, 0, sizeof(resset_t));
-        rset->next     = rp->any.rsets;
-        rset->refcnt   = 1;
-        rset->resproto = rp;
-        rset->peer     = strdup(peer);
-        rset->id       = id;
-        rset->state    = state;
+        rset->next        = rp->any.rsets;
+        rset->refcnt      = 1;
+        rset->resproto    = rp;
+        rset->peer        = strdup(peer);
+        rset->id          = id;
+        rset->state       = state;
+        rset->flags.all   = all;
+        rset->flags.share = share;
+        rset->flags.opt   = opt;
 
         rp->any.rsets  = rset;
     }

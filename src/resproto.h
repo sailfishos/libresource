@@ -49,6 +49,20 @@ typedef struct resproto_reply_s {
     void                    *data;      /* timer data, if applies */
 } resproto_reply_t;             
 
+#define RESPROTO_QUEUE_LINK        \
+    struct resproto_qitem_s *next; \
+    struct resproto_qitem_s *prev
+
+typedef struct resproto_qitem_s {
+    RESPROTO_QUEUE_LINK;
+    char                    *peer;      /* sender name */
+    void                    *data;      /* for the callback */
+    resmsg_t                *msg;       /* message */
+} resproto_qitem_t;
+
+typedef struct {
+    RESPROTO_QUEUE_LINK;
+} resproto_qhead_t;
 
 #define RESPROTO_COMMON                                \
     union resproto_u        *next;                     \
@@ -83,6 +97,11 @@ typedef struct {
 typedef struct {
     RESPROTO_COMMON;
     char                 *name;
+    int                   busy;
+    struct {
+        resproto_qhead_t      head;
+        void                 *timer;
+    }                     queue;
     struct {
         resproto_timer_add_t  add;
         resproto_timer_del_t  del;

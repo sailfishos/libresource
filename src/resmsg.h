@@ -82,6 +82,9 @@ DBusMessage *resmsg_compose_dbus_message(const char *, const char *,
 DBusMessage *resmsg_reply_dbus_message(DBusMessage *, resmsg_t *);
 resmsg_t    *resmsg_parse_dbus_message(DBusMessage *, resmsg_t *);
 
+resmsg_t *resmsg_copy_internal_message(resmsg_t *);
+void      resmsg_destroy_internal_message(resmsg_t *);
+
 char        *resmsg_dump_message(resmsg_t *, int, char *, int);
 char        *resmsg_type_str(resmsg_type_t type);
 char        *resmsg_res_str(uint32_t, char *, int);
