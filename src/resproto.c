@@ -4,8 +4,10 @@
 #include <stdarg.h>
 
 #include "resproto.h"
-#include "dbus.h"
-#include "internal.h"
+#include "dbus-msg.h"
+#include "dbus-proto.h"
+#include "internal-msg.h"
+#include "internal-proto.h"
 
 
 static resproto_t    *resproto_list;

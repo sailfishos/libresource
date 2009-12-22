@@ -3,7 +3,8 @@
 #include <string.h>
 #include <errno.h>
 
-#include "internal.h"
+#include "internal-msg.h"
+#include "internal-proto.h"
 
 typedef struct {
     char      name[64];
@@ -40,9 +41,9 @@ int resproto_internal_manager_init(resproto_internal_t *rp, va_list args)
     int                   success;
 
     if (resproto_manager != NULL)
-        success  = (rp == resproto_manager);
+        success = (rp == resproto_manager);
     else {
-        success  = TRUE;
+        success = TRUE;
 
         rp->connect   = connect_fail;
         rp->disconn   = resset_destroy;
@@ -299,7 +300,7 @@ static void receive_message_init(resproto_internal_t *rp,
             memset(item, 0, sizeof(resproto_qitem_t));
             item->peer = strdup(peer);
             item->data = data;
-            item->msg = resmsg_copy_internal_message(msg);
+            item->msg = resmsg_internal_copy_message(msg);
 
             queue_append_item(&rp->queue.head, item);
 
@@ -328,7 +329,7 @@ static int receive_message_dequeue(void *data)
         receive_message_complete(rp, item);
 
         free(item->peer);
-        resmsg_destroy_internal_message(item->msg);
+        resmsg_internal_destroy_message(item->msg);
         free(item);
     }
 

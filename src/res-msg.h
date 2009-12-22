@@ -2,7 +2,6 @@
 #define __RES_MESSAGE_H__
 
 #include <stdint.h>
-#include <dbus/dbus.h>
 
 #define RESMSG_BIT(n) (((uint32_t)1) << (n))
 
@@ -66,7 +65,7 @@ typedef struct {
 } resmsg_status_t;
 
 
-typedef union {
+typedef union resmsg_u {
     resmsg_type_t     type;
     resmsg_any_t      any;
     resmsg_record_t   record;
@@ -75,15 +74,6 @@ typedef union {
     resmsg_status_t   status;
 } resmsg_t;
 
-
-DBusMessage *resmsg_compose_dbus_message(const char *, const char *,
-                                         const char *, const char *,
-                                         resmsg_t *);
-DBusMessage *resmsg_reply_dbus_message(DBusMessage *, resmsg_t *);
-resmsg_t    *resmsg_parse_dbus_message(DBusMessage *, resmsg_t *);
-
-resmsg_t *resmsg_copy_internal_message(resmsg_t *);
-void      resmsg_destroy_internal_message(resmsg_t *);
 
 char        *resmsg_dump_message(resmsg_t *, int, char *, int);
 char        *resmsg_type_str(resmsg_type_t type);

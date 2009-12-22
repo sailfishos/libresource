@@ -1,5 +1,5 @@
-#ifndef __RES_DBUS_H__
-#define __RES_DBUS_H__
+#ifndef __RES_DBUS_PROTO_H__
+#define __RES_DBUS_PROTO_H__
 
 #include <stdarg.h>
 #include <resproto.h>
@@ -33,7 +33,7 @@ int resproto_dbus_client_init(resproto_dbus_t *, va_list);
 
 
 
-#endif /* __RES_DBUS_H__ */
+#endif /* __RES_DBUS_PROTO_H__ */
 
 /* 
  * Local Variables:

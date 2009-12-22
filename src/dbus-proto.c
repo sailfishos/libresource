@@ -2,7 +2,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "dbus.h"
+#include "dbus-proto.h"
+#include "dbus-msg.h"
 
 
 /* 
@@ -160,7 +161,7 @@ static int send_message(resset_t          *rset,
 
     if (!(dest   = rset->peer)  ||
         !(method = method_name(resmsg->type)) ||
-        !(dbusmsg= resmsg_compose_dbus_message(dest,path,iface,method,resmsg)))
+        !(dbusmsg= resmsg_dbus_compose_message(dest,path,iface,method,resmsg)))
     {
         success = FALSE;
     }
@@ -210,7 +211,7 @@ static int send_error(resset_t *rset, resmsg_t *resreply, void *data)
     DBusConnection *conn      = rp->dbus.conn; 
     DBusMessage    *dbusmsg   = (DBusMessage *)data;
     dbus_uint32_t   serial    = dbus_message_get_serial(dbusmsg);
-    DBusMessage    *dbusreply = resmsg_reply_dbus_message(dbusmsg, resreply);
+    DBusMessage    *dbusreply = resmsg_dbus_reply_message(dbusmsg, resreply);
     int             success;
 
     dbus_connection_send(conn, dbusreply, &serial);
@@ -250,7 +251,7 @@ static void status_method(DBusPendingCall *pend, void *data)
             resmsg.status.errmsg = errmsg ? errmsg : "<unidentified error>";
         }
         else {
-            if (!resmsg_parse_dbus_message(dbusmsg, &resmsg)            ||
+            if (!resmsg_dbus_parse_message(dbusmsg, &resmsg)            ||
                 reply->serial != dbus_message_get_reply_serial(dbusmsg) ||
                 resmsg.status.type  != RESMSG_STATUS                    ||
                 resmsg.status.id    != rset->id                         ||
@@ -526,7 +527,7 @@ static DBusHandlerResult manager_method(DBusConnection *conn,
         return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
     }
 
-    if (resmsg_parse_dbus_message(dbusmsg, &resmsg) != NULL) {
+    if (resmsg_dbus_parse_message(dbusmsg, &resmsg) != NULL) {
         method = method_name(resmsg.type);
 
         if (method && !strcmp(method, member) && (rp = find_resproto(conn))) {

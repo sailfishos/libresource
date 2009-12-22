@@ -1,7 +1,9 @@
 #ifndef __RES_PROTO_H__
 #define __RES_PROTO_H__
 
-#include <resmsg.h>
+#include <dbus/dbus.h>
+
+#include <res-msg.h>
 #include <resset.h>
 
 
