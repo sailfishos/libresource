@@ -4,7 +4,7 @@
 #include <dbus/dbus.h>
 
 #include <res-msg.h>
-#include <resset.h>
+#include <res-set.h>
 
 
 typedef enum {

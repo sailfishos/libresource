@@ -3,7 +3,7 @@
 #include <string.h>
 #include <stdarg.h>
 
-#include "resproto.h"
+#include "res-proto.h"
 #include "dbus-msg.h"
 #include "dbus-proto.h"
 #include "internal-msg.h"

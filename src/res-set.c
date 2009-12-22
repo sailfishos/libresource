@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "resproto.h"
+#include "res-proto.h"
 
 
 

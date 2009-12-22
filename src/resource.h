@@ -1,7 +1,7 @@
 #ifndef __LIB_RESOURCE_H__
 #define __LIB_RESOURCE_H__
 
-#include <resproto.h>
+#include <res-proto.h>
 
 
 #endif /* __LIB_RESOURCE_H__ */

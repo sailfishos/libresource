@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "resproto.h"
+#include <res-proto.h>
 
 static char *flag_str(uint32_t);
 

@@ -2,7 +2,7 @@
 #define __RES_DBUS_PROTO_H__
 
 #include <stdarg.h>
-#include <resproto.h>
+#include <res-proto.h>
 
 /* D-Bus names */
 #define RESPROTO_DBUS_ADMIN_NAME                "org.freedesktop.DBus"

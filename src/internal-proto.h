@@ -2,7 +2,7 @@
 #define __RES_INTERNAL_H__
 
 #include <stdarg.h>
-#include <resproto.h>
+#include <res-proto.h>
 
 #define RESPROTO_INTERNAL_MANAGER  "ResourceManager"
 
