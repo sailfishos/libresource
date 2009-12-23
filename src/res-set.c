@@ -5,7 +5,7 @@
 
 
 
-resset_t *resset_create(resconn_t     *rp,
+resset_t *resset_create(resconn_t     *rcon,
                         const char    *peer,
                         uint32_t       id,
                         resset_state_t state,
@@ -18,9 +18,9 @@ resset_t *resset_create(resconn_t     *rp,
     if ((rset = malloc(sizeof(resset_t))) != NULL) {
     
         memset(rset, 0, sizeof(resset_t));
-        rset->next        = rp->any.rsets;
+        rset->next        = rcon->any.rsets;
         rset->refcnt      = 1;
-        rset->resconn     = rp;
+        rset->resconn     = rcon;
         rset->peer        = strdup(peer);
         rset->id          = id;
         rset->state       = state;
@@ -28,7 +28,7 @@ resset_t *resset_create(resconn_t     *rp,
         rset->flags.share = share;
         rset->flags.opt   = opt;
 
-        rp->any.rsets  = rset;
+        rcon->any.rsets  = rset;
     }
 
     return rset;
@@ -50,7 +50,7 @@ void resset_ref(resset_t *rset)
  
 void resset_unref(resset_t *rset)
 {
-    resconn_dbus_t  *rp = &rset->resconn->dbus;
+    resconn_dbus_t  *rcon = &rset->resconn->dbus;
     resset_t        *prev;
     resconn_reply_t *reply;
     resconn_reply_t *next;
@@ -58,7 +58,7 @@ void resset_unref(resset_t *rset)
 
     if (rset != NULL && --rset->refcnt <= 0) {
  
-       for (prev = (resset_t *)&rp->rsets;
+       for (prev = (resset_t *)&rcon->rsets;
             prev->next != NULL;
             prev = prev->next)
         {
@@ -74,11 +74,11 @@ void resset_unref(resset_t *rset)
     }
 }
 
-resset_t *resset_find(resconn_t *rp, const char *peer, uint32_t id)
+resset_t *resset_find(resconn_t *rcon, const char *peer, uint32_t id)
 {
     resset_t *rset;
 
-    for (rset = rp->any.rsets;   rset != NULL;   rset = rset->next) {
+    for (rset = rcon->any.rsets;   rset != NULL;   rset = rset->next) {
         if (!strcmp(peer, rset->peer) && id == rset->id)
             break;
     }

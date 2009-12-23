@@ -1,6 +1,7 @@
 #ifndef __RES_CONN_H__
 #define __RES_CONN_H__
 
+#include <stdarg.h>
 #include <dbus/dbus.h>
 
 #include <res-proto.h>
@@ -96,7 +97,7 @@ typedef union resconn_u {
 } resconn_t;
 
 
-resconn_t *resconn_init(resproto_role_t, resproto_transport_t, ...);
+resconn_t *resconn_init(resproto_role_t, resproto_transport_t, va_list);
 resset_t  *resconn_connect(resconn_t *, resmsg_t *, resproto_status_t);
 int        resconn_disconnect(resset_t *, resmsg_t *, resproto_status_t);
 

@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdarg.h>
 
 #include <res-conn.h>
 
@@ -35,8 +36,6 @@ static int client_valid_message[RESMSG_MAX] = {
 static void manager_link_handler(resconn_t *, resproto_linkst_t);
 static void client_link_handler(resconn_t *, resproto_linkst_t);
 
-static void message_receive(resmsg_t *, resset_t *, void *);
-
 static void resconn_list_add(resconn_t *);
 static void resconn_list_delete(resconn_t *);
 
@@ -44,36 +43,32 @@ static void resconn_list_delete(resconn_t *);
 
 resconn_t *resconn_init(resproto_role_t       role,
                         resproto_transport_t  transp,
-                        ...  /* role & transport specific args */ )
+                        va_list               args)
 {
     static uint32_t  id;
 
-    va_list    args;
-    resconn_t *rp;
+    resconn_t *rcon;
     int        success;
 
-    if ((rp = malloc(sizeof(resconn_t))) != NULL) {
+    if ((rcon = malloc(sizeof(resconn_t))) != NULL) {
 
-        memset(rp, 0, sizeof(resconn_t));
-        rp->any.id      = ++id;
-        rp->any.role    = role;
-        rp->any.transp  = transp;
-        rp->any.receive = message_receive;
+        memset(rcon, 0, sizeof(resconn_t));
+        rcon->any.id      = ++id;
+        rcon->any.role    = role;
+        rcon->any.transp  = transp;
 
-        va_start(args, transp);
-        
         switch (role) {
 
         case RESPROTO_ROLE_MANAGER:
-            rp->any.link    = manager_link_handler;
-            rp->any.valid   = manager_valid_message;
+            rcon->any.link    = manager_link_handler;
+            rcon->any.valid   = manager_valid_message;
 
             switch (transp) {
             case RESPROTO_TRANSPORT_DBUS:
-                success = resproto_dbus_manager_init(&rp->dbus, args);
+                success = resproto_dbus_manager_init(&rcon->dbus, args);
                 break;
             case RESPROTO_TRANSPORT_INTERNAL:
-                success = resproto_internal_manager_init(&rp->internal, args);
+                success = resproto_internal_manager_init(&rcon->internal,args);
                 break;
             default:
                 success = FALSE;
@@ -82,15 +77,15 @@ resconn_t *resconn_init(resproto_role_t       role,
             break;
             
         case RESPROTO_ROLE_CLIENT:
-            rp->any.link    = client_link_handler;
-            rp->any.valid   = client_valid_message;
+            rcon->any.link    = client_link_handler;
+            rcon->any.valid   = client_valid_message;
 
             switch (transp) {
             case RESPROTO_TRANSPORT_DBUS:
-                success = resproto_dbus_client_init(&rp->dbus, args);
+                success = resproto_dbus_client_init(&rcon->dbus, args);
                 break;
             case RESPROTO_TRANSPORT_INTERNAL:
-                success = resproto_internal_client_init(&rp->internal, args);
+                success = resproto_internal_client_init(&rcon->internal, args);
                 break;
             default:
                 success = FALSE;
@@ -103,37 +98,35 @@ resconn_t *resconn_init(resproto_role_t       role,
             break;
         }
 
-        va_end(args);
-
         if (!success)
             goto failed;
 
-        resconn_list_add(rp);
+        resconn_list_add(rcon);
     }
 
-    return rp;
+    return rcon;
 
  failed:
-    free(rp);
+    free(rcon);
     return NULL;
 }
 
 
-resset_t *resconn_connect(resconn_t         *rp,
+resset_t *resconn_connect(resconn_t         *rcon,
                           resmsg_t          *resmsg,
                           resproto_status_t  status)
 {
     resset_t *rset;
 
-    if (rp == NULL || rp->any.killed ||
-        rp->any.role != RESPROTO_ROLE_CLIENT ||
+    if (rcon == NULL || rcon->any.killed ||
+        rcon->any.role != RESPROTO_ROLE_CLIENT ||
         resmsg->type != RESMSG_REGISTER)
     {
         rset =  NULL;
     }
     else {
-        rset = rp->any.connect(rp, resmsg);
-        rp->any.send(rset, resmsg, status);
+        rset = rcon->any.connect(rcon, resmsg);
+        rcon->any.send(rset, resmsg, status);
     }
 
     return rset;
@@ -143,7 +136,7 @@ int resconn_disconnect(resset_t          *rset,
                        resmsg_t          *resmsg,
                        resproto_status_t  status)
 {
-    resconn_t  *rp = rset->resconn;
+    resconn_t  *rcon = rset->resconn;
     int         success;
 
     if (rset         == NULL                          ||
@@ -153,8 +146,8 @@ int resconn_disconnect(resset_t          *rset,
         success = FALSE;
     }
     else {
-        if ((success = rp->any.send(rset, resmsg, status)))
-            rp->any.disconn(rset);
+        if ((success = rcon->any.send(rset, resmsg, status)))
+            rcon->any.disconn(rset);
     }
 
     return success;
@@ -167,11 +160,11 @@ resconn_reply_t *resconn_reply_create(resmsg_type_t       type,
                                       resset_t           *rset,
                                       resproto_status_t   status)
 {
-    resconn_any_t   *rp = &rset->resconn->any;
+    resconn_any_t   *rcon = &rset->resconn->any;
     resconn_reply_t *reply;
     resconn_reply_t *last;
 
-    for (last = (resconn_reply_t *)&rp->replies; last->next; last = last->next)
+    for (last = (resconn_reply_t *)&rcon->replies; last->next; last = last->next)
         ;
 
     if ((reply = malloc(sizeof(resconn_reply_t))) != NULL) {
@@ -193,14 +186,14 @@ void resconn_reply_destroy(void *ptr)
 {
     resconn_reply_t *reply = (resconn_reply_t *)ptr;
     resset_t        *rset;
-    resconn_t       *rp;
+    resconn_t       *rcon;
     resconn_reply_t *prev;
 
     if (ptr != NULL) {
         if ((rset  = reply->rset  ) != NULL &&
-            (rp    = rset->resconn) != NULL    )
+            (rcon    = rset->resconn) != NULL    )
         {
-            for (prev = (resconn_reply_t *)&rp->any.replies;
+            for (prev = (resconn_reply_t *)&rcon->any.replies;
                  prev->next != NULL;
                  prev = prev->next)
             {
@@ -216,11 +209,11 @@ void resconn_reply_destroy(void *ptr)
     }    
 }
 
-resconn_reply_t *resconn_reply_find(resconn_t *rp, uint32_t serial)
+resconn_reply_t *resconn_reply_find(resconn_t *rcon, uint32_t serial)
 {
     resconn_reply_t *reply;
 
-    for (reply = rp->any.replies;   reply != NULL;   reply = reply->next) {
+    for (reply = rcon->any.replies;   reply != NULL;   reply = reply->next) {
         if (serial == reply->serial)
             break;
     }
@@ -229,11 +222,11 @@ resconn_reply_t *resconn_reply_find(resconn_t *rp, uint32_t serial)
 }
 
 
-static void manager_link_handler(resconn_t *rp, resproto_linkst_t state)
+static void manager_link_handler(resconn_t *rcon, resproto_linkst_t state)
 {
 }
 
-static void client_link_handler(resconn_t *rp, resproto_linkst_t state)
+static void client_link_handler(resconn_t *rcon, resproto_linkst_t state)
 {
     resset_t          *rset, *next;
     resmsg_t           resmsg;
@@ -242,17 +235,17 @@ static void client_link_handler(resconn_t *rp, resproto_linkst_t state)
     switch (state) {
 
     case RESPROTO_LINK_UP:
-        if (rp->any.mgrup)
-            rp->any.mgrup(rp);
+        if (rcon->any.mgrup)
+            rcon->any.mgrup(rcon);
         break;
 
     case RESPROTO_LINK_DOWN:
-        handler = rp->any.handler[RESMSG_UNREGISTER];
+        handler = rcon->any.handler[RESMSG_UNREGISTER];
 
         memset(&resmsg, 0, sizeof(resmsg));
         resmsg.possess.type = RESMSG_UNREGISTER;
 
-        for (rset = rp->any.rsets;   rset != NULL;   rset = next) {
+        for (rset = rcon->any.rsets;   rset != NULL;   rset = next) {
             next = rset->next;
 
             if (handler && rset->state == RESPROTO_RSET_STATE_CONNECTED) {
@@ -260,9 +253,9 @@ static void client_link_handler(resconn_t *rp, resproto_linkst_t state)
                 handler(&resmsg, rset, NULL);
             }
 
-            rp->any.disconn(rset);
+            rcon->any.disconn(rset);
         }
-        if (rp->any.rsets == NULL)
+        if (rcon->any.rsets == NULL)
             printf("No hanging rset\n");
         break;
 
@@ -272,29 +265,15 @@ static void client_link_handler(resconn_t *rp, resproto_linkst_t state)
 }
 
 
-static void message_receive(resmsg_t *resmsg,
-                            resset_t *rset,
-                            void     *protodata)
+static void resconn_list_add(resconn_t *rcon)
 {
-    resconn_t          *rp   = rset->resconn;
-    resmsg_type_t       type = resmsg->type;
-    resproto_handler_t  handler;
-
-    if (type >= 0 && type < RESMSG_MAX && (handler = rp->any.handler[type])) {
-        handler(resmsg, rset, protodata);
+    if (rcon != NULL) {
+        rcon->any.next  = resconn_list;
+        resconn_list = rcon;
     }
 }
 
-
-static void resconn_list_add(resconn_t *rp)
-{
-    if (rp != NULL) {
-        rp->any.next  = resconn_list;
-        resconn_list = rp;
-    }
-}
-
-static void resconn_list_delete(resconn_t *rp)
+static void resconn_list_delete(resconn_t *rcon)
 {
     resconn_t *prev;
 
@@ -302,19 +281,19 @@ static void resconn_list_delete(resconn_t *rp)
          prev->any.next != NULL;
          prev = prev->any.next)
     {
-        if (prev->any.next == rp) {
-            prev->any.next = rp->any.next;
-            free(rp);
+        if (prev->any.next == rcon) {
+            prev->any.next = rcon->any.next;
+            free(rcon);
         }
     }
 }
 
-resconn_t *resconn_list_iterate(resconn_t *rp)
+resconn_t *resconn_list_iterate(resconn_t *rcon)
 {
-    if (rp == NULL)
-        rp = (resconn_t *)&resconn_list;
+    if (rcon == NULL)
+        rcon = (resconn_t *)&resconn_list;
 
-    return rp->any.next;
+    return rcon->any.next;
 }
 
 /* 

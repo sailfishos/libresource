@@ -36,25 +36,25 @@ static char *method_name(resmsg_type_t);
  */
 static int          timeout = -1;     /* message timeout in msec's */
 
-int resproto_dbus_manager_init(resconn_dbus_t *rp, va_list args)
+int resproto_dbus_manager_init(resconn_dbus_t *rcon, va_list args)
 {
-    DBusConnection    *conn  = va_arg(args, DBusConnection *);
-    const char        *name  = dbus_bus_get_unique_name(conn);
+    DBusConnection    *dcon  = va_arg(args, DBusConnection *);
+    const char        *name  = dbus_bus_get_unique_name(dcon);
 
     int success = FALSE;
 
-    rp->conn  = conn;
+    rcon->conn  = dcon;
 
-    if (dbus_connection_add_filter(conn, manager_name_changed,NULL, NULL) &&
-        request_name(rp, RESPROTO_DBUS_MANAGER_NAME)                      &&
-        register_manager_object(rp)                                          )
+    if (dbus_connection_add_filter(dcon, manager_name_changed,NULL, NULL) &&
+        request_name(rcon, RESPROTO_DBUS_MANAGER_NAME)                    &&
+        register_manager_object(rcon)                                       )
     {
-        rp->connect = connect_fail;
-        rp->disconn = resset_destroy;
-        rp->send    = send_message;
-        rp->error   = send_error;
-        rp->dbusid  = strdup(name);
-        rp->path    = strdup(RESPROTO_DBUS_MANAGER_PATH);
+        rcon->connect = connect_fail;
+        rcon->disconn = resset_destroy;
+        rcon->send    = send_message;
+        rcon->error   = send_error;
+        rcon->dbusid  = strdup(name);
+        rcon->path    = strdup(RESPROTO_DBUS_MANAGER_PATH);
 
         success = TRUE;
     }
@@ -64,30 +64,30 @@ int resproto_dbus_manager_init(resconn_dbus_t *rp, va_list args)
 
 
 
-int resproto_dbus_client_init(resconn_dbus_t *rp, va_list args)
+int resproto_dbus_client_init(resconn_dbus_t *rcon, va_list args)
 {
     static int      client_no;
 
     resconn_linkup_t   mgrup = va_arg(args, resconn_linkup_t);
-    DBusConnection    *conn  = va_arg(args, DBusConnection *);
-    const char        *name  = dbus_bus_get_unique_name(conn);
+    DBusConnection    *dcon  = va_arg(args, DBusConnection *);
+    const char        *name  = dbus_bus_get_unique_name(dcon);
     int                success = FALSE;
     char               path[1024];
 
-    rp->conn  = conn;
-    rp->mgrup = mgrup;
+    rcon->conn  = dcon;
+    rcon->mgrup = mgrup;
 
-    if (dbus_connection_add_filter(conn, client_name_changed,NULL, NULL) &&
-        watch_manager(rp, TRUE)                                             )
+    if (dbus_connection_add_filter(dcon, client_name_changed,NULL, NULL) &&
+        watch_manager(rcon, TRUE)                                             )
     {    
         snprintf(path, sizeof(path), RESPROTO_DBUS_CLIENT_PATH, client_no++);
         
-        rp->connect = connect_to_manager;
-        rp->disconn = resset_destroy;
-        rp->send    = send_message;
-        rp->error   = send_error;
-        rp->dbusid  = strdup(name);
-        rp->path    = strdup(path);
+        rcon->connect = connect_to_manager;
+        rcon->disconn = resset_destroy;
+        rcon->send    = send_message;
+        rcon->error   = send_error;
+        rcon->dbusid  = strdup(name);
+        rcon->path    = strdup(path);
 
         success = TRUE;
     }
@@ -95,23 +95,23 @@ int resproto_dbus_client_init(resconn_dbus_t *rp, va_list args)
     return success;
 }
 
-static resset_t *connect_to_manager(resconn_t *rp, resmsg_t *resmsg)
+static resset_t *connect_to_manager(resconn_t *rcon, resmsg_t *resmsg)
 {
     char          *name   = RESPROTO_DBUS_MANAGER_NAME;
     resmsg_rset_t *flags = &resmsg->record.rset;
     uint32_t       id     = resmsg->any.id;
     resset_t      *rset;
 
-    if ((rset = resset_find(rp, name, id)) == NULL)
-        rset = resset_create(rp, name, id, RESPROTO_RSET_STATE_CREATED,
+    if ((rset = resset_find(rcon, name, id)) == NULL)
+        rset = resset_create(rcon, name, id, RESPROTO_RSET_STATE_CREATED,
                              flags->all, flags->share, flags->opt);
 
     return rset;
 }
 
-static resset_t *connect_fail(resconn_t *rp, resmsg_t *resmsg)
+static resset_t *connect_fail(resconn_t *rcon, resmsg_t *resmsg)
 {
-    (void)rp;
+    (void)rcon;
     (void)resmsg;
 
     return NULL;
@@ -121,7 +121,7 @@ static int send_message(resset_t          *rset,
                         resmsg_t          *resmsg,
                         resproto_status_t  status)
 {
-    resconn_dbus_t  *rp;
+    resconn_dbus_t  *rcon;
     DBusMessage     *dbusmsg;
     char            *dest;
     char            *path;
@@ -139,9 +139,9 @@ static int send_message(resset_t          *rset,
     if (!rset || !resmsg)
         return FALSE;
 
-    rp = &rset->resconn->dbus;
+    rcon = &rset->resconn->dbus;
     
-    switch (rp->role) {
+    switch (rcon->role) {
         
     case RESPROTO_ROLE_MANAGER:
         snprintf(buf, sizeof(buf), RESPROTO_DBUS_CLIENT_PATH, resmsg->any.id);
@@ -166,7 +166,7 @@ static int send_message(resset_t          *rset,
         success = FALSE;
     }
     else {
-        if (rp->role != RESPROTO_ROLE_CLIENT)
+        if (rcon->role != RESPROTO_ROLE_CLIENT)
             need_reply = status ? TRUE : FALSE;
         else {
             switch (resmsg->any.type) {
@@ -177,10 +177,10 @@ static int send_message(resset_t          *rset,
         }
 
         if (!need_reply)
-            success = dbus_connection_send(rp->conn, dbusmsg, NULL);
+            success = dbus_connection_send(rcon->conn, dbusmsg, NULL);
         else {
             do {
-                success = dbus_connection_send_with_reply(rp->conn, dbusmsg,
+                success = dbus_connection_send_with_reply(rcon->conn, dbusmsg,
                                                           &pend, timeout);
                 if (!success)
                     break;
@@ -207,14 +207,14 @@ static int send_message(resset_t          *rset,
 
 static int send_error(resset_t *rset, resmsg_t *resreply, void *data)
 {
-    resconn_t     *rp         = rset->resconn;
-    DBusConnection *conn      = rp->dbus.conn; 
+    resconn_t      *rcon      = rset->resconn;
+    DBusConnection *dcon      = rcon->dbus.conn; 
     DBusMessage    *dbusmsg   = (DBusMessage *)data;
     dbus_uint32_t   serial    = dbus_message_get_serial(dbusmsg);
     DBusMessage    *dbusreply = resmsg_dbus_reply_message(dbusmsg, resreply);
     int             success;
 
-    dbus_connection_send(conn, dbusreply, &serial);
+    dbus_connection_send(dcon, dbusreply, &serial);
     dbus_message_unref(dbusreply);
     dbus_message_unref(dbusmsg);
 
@@ -226,14 +226,14 @@ static void status_method(DBusPendingCall *pend, void *data)
     resconn_reply_t *reply   = (resconn_reply_t *)data;
     DBusMessage     *dbusmsg = dbus_pending_call_steal_reply(pend);
     resset_t        *rset;
-    resconn_t       *rp;
+    resconn_t       *rcon;
     resmsg_t         resmsg;
     const char      *errmsg;
     int              success;
 
     if (reply && dbusmsg){
         rset = reply->rset;
-        rp   = rset->resconn;
+        rcon = rset->resconn;
         
         if (dbus_message_get_type(dbusmsg) == DBUS_MESSAGE_TYPE_ERROR) {
             errmsg = dbus_message_get_error_name(dbusmsg);
@@ -266,7 +266,7 @@ static void status_method(DBusPendingCall *pend, void *data)
             }
         }
 
-        if (rp->any.role == RESPROTO_ROLE_CLIENT) {
+        if (rcon->any.role == RESPROTO_ROLE_CLIENT) {
             switch (reply->type) {
 
             case RESMSG_REGISTER:
@@ -301,19 +301,22 @@ static void status_method(DBusPendingCall *pend, void *data)
 }
 
 
-static resconn_t *find_resproto(DBusConnection *conn)
+static resconn_t *find_resproto(DBusConnection *dcon)
 {
-    resconn_t *rp = NULL;
+    resconn_t *rcon = NULL;
 
-    while ((rp = resconn_list_iterate(rp)) != NULL) {
-        if (rp->any.transp == RESPROTO_TRANSPORT_DBUS && rp->dbus.conn == conn)
+    while ((rcon = resconn_list_iterate(rcon)) != NULL) {
+        if (rcon->any.transp == RESPROTO_TRANSPORT_DBUS &&
+            rcon->dbus.conn  == dcon                      )
+        {
             break;
+        }
     }
     
-    return rp;
+    return rcon;
 }
 
-static int watch_manager(resconn_dbus_t *rp, int watchit)
+static int watch_manager(resconn_dbus_t *rcon, int watchit)
 {
     static char *filter =
         "type='signal',"
@@ -326,15 +329,15 @@ static int watch_manager(resconn_dbus_t *rp, int watchit)
     int success;
 
     if (watchit)
-        success = add_filter(rp, filter);
+        success = add_filter(rcon, filter);
     else
-        success = remove_filter(rp, filter);
+        success = remove_filter(rcon, filter);
     
     return success;
 }
 
 
-static int watch_client(resconn_dbus_t *rp, const char *dbusid, int watchit)
+static int watch_client(resconn_dbus_t *rcon, const char *dbusid, int watchit)
 {
     static char *filter_fmt =
         "type='signal',"
@@ -350,20 +353,20 @@ static int watch_client(resconn_dbus_t *rp, const char *dbusid, int watchit)
     snprintf(filter, sizeof(filter), filter_fmt, dbusid, dbusid);
     
     if (watchit)
-        success = add_filter(rp, filter);
+        success = add_filter(rcon, filter);
     else
-        success = remove_filter(rp, filter);
+        success = remove_filter(rcon, filter);
     
     return success;
 }
 
 
-static int add_filter(resconn_dbus_t *rp, char *filter)
+static int add_filter(resconn_dbus_t *rcon, char *filter)
 {
     DBusError  err;
 
     dbus_error_init(&err);
-    dbus_bus_add_match(rp->conn, filter, &err);
+    dbus_bus_add_match(rcon->conn, filter, &err);
 
     if (dbus_error_is_set(&err)) {
         dbus_error_free(&err);
@@ -373,14 +376,14 @@ static int add_filter(resconn_dbus_t *rp, char *filter)
     return TRUE;
 }
 
-static int remove_filter(resconn_dbus_t *rp, char *filter)
+static int remove_filter(resconn_dbus_t *rcon, char *filter)
 {
-    dbus_bus_remove_match(rp->conn, filter, NULL);
+    dbus_bus_remove_match(rcon->conn, filter, NULL);
 
     return TRUE;
 }
 
-static int request_name(resconn_dbus_t *rp, char *name)
+static int request_name(resconn_dbus_t *rcon, char *name)
 {
     DBusError  err;
     int        retval;
@@ -388,7 +391,7 @@ static int request_name(resconn_dbus_t *rp, char *name)
 
     dbus_error_init(&err);
 
-    retval = dbus_bus_request_name(rp->conn, name,
+    retval = dbus_bus_request_name(rcon->conn, name,
                                    DBUS_NAME_FLAG_REPLACE_EXISTING, &err);
 
     if (retval == DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER)
@@ -404,7 +407,7 @@ static int request_name(resconn_dbus_t *rp, char *name)
     return success;
 }
 
-static int register_manager_object(resconn_dbus_t *rp)
+static int register_manager_object(resconn_dbus_t *rcon)
 {
     static struct DBusObjectPathVTable method = {
         .message_function = manager_method
@@ -412,7 +415,7 @@ static int register_manager_object(resconn_dbus_t *rp)
 
     int success;
 
-    success = dbus_connection_register_object_path(rp->conn,
+    success = dbus_connection_register_object_path(rcon->conn,
                                                    RESPROTO_DBUS_MANAGER_PATH,
                                                    &method, NULL);
     
@@ -420,17 +423,16 @@ static int register_manager_object(resconn_dbus_t *rp)
 }
 
 
-static DBusHandlerResult manager_name_changed(DBusConnection *conn,
+static DBusHandlerResult manager_name_changed(DBusConnection *dcon,
                                               DBusMessage    *msg,
                                               void           *user_data)
 {
-    (void)conn;
     (void)user_data;
 
     char              *sender;
     char              *before;
     char              *after;
-    resconn_t         *rp;
+    resconn_t         *rcon;
     int                success;
 
     success = dbus_message_is_signal(msg, RESPROTO_DBUS_ADMIN_INTERFACE,
@@ -447,11 +449,11 @@ static DBusHandlerResult manager_name_changed(DBusConnection *conn,
                                     DBUS_TYPE_INVALID);
     
     if (success && sender != NULL && before != NULL) {
-        if ((rp = find_resproto(conn)) != NULL) {
+        if ((rcon = find_resproto(dcon)) != NULL) {
             if (!after || !strcmp(after, "")) {
                 /* client is gone */
-                if (rp->any.link)
-                    rp->any.link(rp, RESPROTO_LINK_DOWN);
+                if (rcon->any.link)
+                    rcon->any.link(rcon, RESPROTO_LINK_DOWN);
             }
         }
     }
@@ -459,17 +461,16 @@ static DBusHandlerResult manager_name_changed(DBusConnection *conn,
     return DBUS_HANDLER_RESULT_HANDLED;
 }
 
-static DBusHandlerResult client_name_changed(DBusConnection *conn,
+static DBusHandlerResult client_name_changed(DBusConnection *dcon,
                                              DBusMessage    *msg,
                                              void           *user_data)
 {
-    (void)conn;
     (void)user_data;
 
     char      *sender;
     char      *before;
     char      *after;
-    resconn_t *rp;
+    resconn_t *rcon;
     int        success;
 
     success = dbus_message_is_signal(msg, RESPROTO_DBUS_ADMIN_INTERFACE,
@@ -486,18 +487,18 @@ static DBusHandlerResult client_name_changed(DBusConnection *conn,
                                     DBUS_TYPE_INVALID);
     
     if (success && sender && !strcmp(sender, RESPROTO_DBUS_MANAGER_NAME)) {
-        if ((rp = find_resproto(conn)) != NULL) {
+        if ((rcon = find_resproto(dcon)) != NULL) {
 
             if (after && strcmp(after, "")) {
                 /* manager is up */
-                if (rp->any.link)
-                    rp->any.link(rp, RESPROTO_LINK_UP);
+                if (rcon->any.link)
+                    rcon->any.link(rcon, RESPROTO_LINK_UP);
             }
             
             else if (before && (!after || !strcmp(after, ""))) {
                 /* manager is gone */
-                if (rp->any.link)
-                    rp->any.link(rp, RESPROTO_LINK_DOWN);
+                if (rcon->any.link)
+                    rcon->any.link(rcon, RESPROTO_LINK_DOWN);
             } 
         }
     }
@@ -505,7 +506,7 @@ static DBusHandlerResult client_name_changed(DBusConnection *conn,
     return DBUS_HANDLER_RESULT_HANDLED;
 }
 
-static DBusHandlerResult manager_method(DBusConnection *conn,
+static DBusHandlerResult manager_method(DBusConnection *dcon,
                                         DBusMessage    *dbusmsg,
                                         void           *user_data)
 {
@@ -516,7 +517,7 @@ static DBusHandlerResult manager_method(DBusConnection *conn,
     const char *member    = dbus_message_get_member(dbusmsg);
     const char *sender    = dbus_message_get_sender(dbusmsg);
     resmsg_t    resmsg;
-    resconn_t  *rp;
+    resconn_t  *rcon;
     resset_t   *rset;
     char       *method;
 
@@ -530,13 +531,15 @@ static DBusHandlerResult manager_method(DBusConnection *conn,
     if (resmsg_dbus_parse_message(dbusmsg, &resmsg) != NULL) {
         method = method_name(resmsg.type);
 
-        if (method && !strcmp(method, member) && (rp = find_resproto(conn))) {
-            for (rset = rp->any.rsets;   rset;   rset = rset->next) {
+        if (method && !strcmp(method, member) &&
+            (rcon = find_resproto(dcon)) != NULL )
+        {
+            for (rset = rcon->any.rsets;   rset;   rset = rset->next) {
 
                 if (!strcmp(sender, rset->peer) && resmsg.any.id == rset->id) {
                     if (resmsg.type != RESMSG_REGISTER) {
                         dbus_message_ref(dbusmsg);
-                        rp->dbus.receive(&resmsg, rset, dbusmsg);
+                        rcon->dbus.receive(&resmsg, rset, dbusmsg);
                     }
                         
                     return DBUS_HANDLER_RESULT_HANDLED;
@@ -545,7 +548,7 @@ static DBusHandlerResult manager_method(DBusConnection *conn,
 
 
             if (resmsg.type == RESMSG_REGISTER) {
-                rset = resset_create(rp, sender, resmsg.any.id,
+                rset = resset_create(rcon, sender, resmsg.any.id,
                                      RESPROTO_RSET_STATE_CONNECTED,
                                      resmsg.record.rset.all,
                                      resmsg.record.rset.share,
@@ -553,7 +556,7 @@ static DBusHandlerResult manager_method(DBusConnection *conn,
 
                 if (rset != NULL) {
                     dbus_message_ref(dbusmsg);
-                    rp->dbus.receive(&resmsg, rset, dbusmsg);
+                    rcon->dbus.receive(&resmsg, rset, dbusmsg);
                 }
                     
                 return DBUS_HANDLER_RESULT_HANDLED;

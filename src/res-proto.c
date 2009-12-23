@@ -13,17 +13,35 @@
 static uint32_t  internal_reqno;
 
 
+static void message_receive(resmsg_t *, resset_t *, void *);
+
+resconn_t *resproto_init(resproto_role_t       role,
+                         resproto_transport_t  transp,
+                         ...    /* role & transport specific args */ )
+{
+    va_list    args;
+    resconn_t *rcon;
+
+    va_start(args, transp);
+
+    if (rcon != NULL) {
+        rcon->any.receive = message_receive;        
+    }
+
+    va_end(args);
+
+        return rcon;
+}
 
 
-
-int resproto_set_handler(resconn_t           *rp,
+int resproto_set_handler(resconn_t           *rcon,
                          resmsg_type_t        type,
                          resproto_handler_t   handler)
 {
-    if (type < 0 || type >= RESMSG_MAX || !rp->any.valid[type] || !handler)
+    if (type < 0 || type >= RESMSG_MAX || !rcon->any.valid[type] || !handler)
         return FALSE;
 
-   rp->any.handler[type] = handler;
+   rcon->any.handler[type] = handler;
 
     return TRUE;
 }
@@ -32,8 +50,8 @@ int resproto_send_message(resset_t          *rset,
                           resmsg_t          *resmsg,
                           resproto_status_t  status)
 {
-    resconn_t       *rp   = rset->resconn;
-    resproto_role_t  role = rp->any.role;
+    resconn_t       *rcon = rset->resconn;
+    resproto_role_t  role = rcon->any.role;
     resmsg_type_t    type = resmsg->type;
     int              success;
 
@@ -41,7 +59,7 @@ int resproto_send_message(resset_t          *rset,
         type == RESMSG_REGISTER || type == RESMSG_UNREGISTER)
         success = FALSE;
     else
-        success = rp->any.send(rset, resmsg, status);
+        success = rcon->any.send(rset, resmsg, status);
 
     return success;
 }
@@ -52,7 +70,7 @@ int resproto_reply_message(resset_t   *rset,
                            int32_t     errcod,
                            const char *errmsg)
 {
-    resconn_t *rp = rset->resconn;
+    resconn_t *rcon = rset->resconn;
     resmsg_t   reply;
     int        success;
 
@@ -69,11 +87,25 @@ int resproto_reply_message(resset_t   *rset,
             reply.status.errcod = errcod;
             reply.status.errmsg = errmsg;
             
-            success = rp->any.error(rset, &reply, protodata);
+            success = rcon->any.error(rset, &reply, protodata);
         }
     }
 
     return success;
+}
+
+
+static void message_receive(resmsg_t *resmsg,
+                            resset_t *rset,
+                            void     *protodata)
+{
+    resconn_t          *rcon = rset->resconn;
+    resmsg_type_t       type = resmsg->type;
+    resproto_handler_t  handler;
+
+    if (type >= 0 && type < RESMSG_MAX && (handler = rcon->any.handler[type])){
+        handler(resmsg, rset, protodata);
+    }
 }
 
 
