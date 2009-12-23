@@ -2,6 +2,9 @@
 #include <stdio.h>
 #include <string.h>
 
+
+#include "res-conn-private.h"
+#include "res-set-private.h"
 #include "dbus-proto.h"
 #include "dbus-msg.h"
 

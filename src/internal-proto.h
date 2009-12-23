@@ -20,7 +20,6 @@ int  resproto_internal_client_init(resconn_internal_t *, va_list);
 
 
 
-
 #endif /* __RES_INTERNAL_H__ */
 
 /* 

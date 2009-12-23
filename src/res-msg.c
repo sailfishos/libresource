@@ -2,7 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <res-conn.h>
+
+#include "res-conn-private.h"
 
 #include "visibility.h"
 

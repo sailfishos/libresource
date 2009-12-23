@@ -3,7 +3,7 @@
 #include <string.h>
 #include <stdarg.h>
 
-#include <res-conn.h>
+#include "res-conn-private.h"
 
 #include "visibility.h"
 

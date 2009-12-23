@@ -26,14 +26,6 @@ typedef struct resset_s {
     void             *userdata;
 } resset_t;
 
-resset_t *resset_create(union resconn_u*, const char*,
-                        uint32_t, resset_state_t,
-                        uint32_t, uint32_t, uint32_t);
-void      resset_destroy(resset_t *);
-void      resset_ref(resset_t *);
-void      resset_unref(resset_t *);
-resset_t *resset_find(union resconn_u *, const char *, uint32_t);
-
 
 #endif /* __RES_SET_H__ */
 

@@ -1,8 +1,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <res-conn.h>
 
+#include "res-conn-private.h"
+#include "res-set-private.h"
 
 
 resset_t *resset_create(resconn_t     *rcon,

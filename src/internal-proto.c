@@ -3,6 +3,8 @@
 #include <string.h>
 #include <errno.h>
 
+#include "res-conn-private.h"
+#include "res-set-private.h"
 #include "internal-msg.h"
 #include "internal-proto.h"
 

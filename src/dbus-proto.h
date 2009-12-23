@@ -32,7 +32,6 @@ int resproto_dbus_manager_init(resconn_dbus_t *, va_list);
 int resproto_dbus_client_init(resconn_dbus_t *, va_list);
 
 
-
 #endif /* __RES_DBUS_PROTO_H__ */
 
 /* 
