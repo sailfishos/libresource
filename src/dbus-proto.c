@@ -9,20 +9,20 @@
 /* 
  * local function prototypes
  */
-static resset_t *connect_to_manager(resproto_t *, resmsg_t*);
-static resset_t *connect_fail(resproto_t *, resmsg_t *);
+static resset_t *connect_to_manager(resconn_t *, resmsg_t*);
+static resset_t *connect_fail(resconn_t *, resmsg_t *);
 static int       send_message(resset_t *, resmsg_t *, resproto_status_t);
 static int       send_error(resset_t *, resmsg_t *, void *);
 static void      status_method(DBusPendingCall *, void *);
 
-static resproto_t *find_resproto(DBusConnection *);
+static resconn_t *find_resproto(DBusConnection *);
 
-static int watch_manager(resproto_dbus_t *, int);
-static int watch_client(resproto_dbus_t *, const char *, int);
-static int remove_filter(resproto_dbus_t *, char *);
-static int add_filter(resproto_dbus_t *, char *);
-static int request_name(resproto_dbus_t *, char *);
-static int register_manager_object(resproto_dbus_t *);
+static int watch_manager(resconn_dbus_t *, int);
+static int watch_client(resconn_dbus_t *, const char *, int);
+static int remove_filter(resconn_dbus_t *, char *);
+static int add_filter(resconn_dbus_t *, char *);
+static int request_name(resconn_dbus_t *, char *);
+static int register_manager_object(resconn_dbus_t *);
 
 static DBusHandlerResult client_name_changed(DBusConnection *,
                                              DBusMessage *, void *);
@@ -36,7 +36,7 @@ static char *method_name(resmsg_type_t);
  */
 static int          timeout = -1;     /* message timeout in msec's */
 
-int resproto_dbus_manager_init(resproto_dbus_t *rp, va_list args)
+int resproto_dbus_manager_init(resconn_dbus_t *rp, va_list args)
 {
     DBusConnection    *conn  = va_arg(args, DBusConnection *);
     const char        *name  = dbus_bus_get_unique_name(conn);
@@ -64,11 +64,11 @@ int resproto_dbus_manager_init(resproto_dbus_t *rp, va_list args)
 
 
 
-int resproto_dbus_client_init(resproto_dbus_t *rp, va_list args)
+int resproto_dbus_client_init(resconn_dbus_t *rp, va_list args)
 {
     static int      client_no;
 
-    resproto_linkup_t  mgrup = va_arg(args, resproto_linkup_t);
+    resconn_linkup_t   mgrup = va_arg(args, resconn_linkup_t);
     DBusConnection    *conn  = va_arg(args, DBusConnection *);
     const char        *name  = dbus_bus_get_unique_name(conn);
     int                success = FALSE;
@@ -95,7 +95,7 @@ int resproto_dbus_client_init(resproto_dbus_t *rp, va_list args)
     return success;
 }
 
-static resset_t *connect_to_manager(resproto_t *rp, resmsg_t *resmsg)
+static resset_t *connect_to_manager(resconn_t *rp, resmsg_t *resmsg)
 {
     char          *name   = RESPROTO_DBUS_MANAGER_NAME;
     resmsg_rset_t *flags = &resmsg->record.rset;
@@ -109,7 +109,7 @@ static resset_t *connect_to_manager(resproto_t *rp, resmsg_t *resmsg)
     return rset;
 }
 
-static resset_t *connect_fail(resproto_t *rp, resmsg_t *resmsg)
+static resset_t *connect_fail(resconn_t *rp, resmsg_t *resmsg)
 {
     (void)rp;
     (void)resmsg;
@@ -121,25 +121,25 @@ static int send_message(resset_t          *rset,
                         resmsg_t          *resmsg,
                         resproto_status_t  status)
 {
-    resproto_dbus_t   *rp;
-    DBusMessage       *dbusmsg;
-    char              *dest;
-    char              *path;
-    char              *iface;
-    char              *method;
-    char               buf[1024];
-    resmsg_type_t      type;
-    uint32_t           serial;
-    uint32_t           reqno;
-    DBusPendingCall   *pend;
-    int                need_reply;
-    resproto_reply_t  *reply;
-    int                success;
+    resconn_dbus_t  *rp;
+    DBusMessage     *dbusmsg;
+    char            *dest;
+    char            *path;
+    char            *iface;
+    char            *method;
+    char             buf[1024];
+    resmsg_type_t    type;
+    uint32_t         serial;
+    uint32_t         reqno;
+    DBusPendingCall *pend;
+    int              need_reply;
+    resconn_reply_t *reply;
+    int              success;
 
     if (!rset || !resmsg)
         return FALSE;
 
-    rp = &rset->resproto->dbus;
+    rp = &rset->resconn->dbus;
     
     switch (rp->role) {
         
@@ -188,11 +188,11 @@ static int send_message(resset_t          *rset,
                 type   = resmsg->type;
                 serial = dbus_message_get_serial(dbusmsg);
                 reqno  = resmsg->any.reqno;
-                reply  = resproto_reply_create(type,serial,reqno,rset,status);
+                reply  = resconn_reply_create(type,serial,reqno,rset,status);
 
                 success = dbus_pending_call_set_notify(pend, status_method,
                                                        reply,
-                                                       resproto_reply_destroy);
+                                                       resconn_reply_destroy);
             } while(0);
         }
 
@@ -207,7 +207,7 @@ static int send_message(resset_t          *rset,
 
 static int send_error(resset_t *rset, resmsg_t *resreply, void *data)
 {
-    resproto_t     *rp        = rset->resproto;
+    resconn_t     *rp         = rset->resconn;
     DBusConnection *conn      = rp->dbus.conn; 
     DBusMessage    *dbusmsg   = (DBusMessage *)data;
     dbus_uint32_t   serial    = dbus_message_get_serial(dbusmsg);
@@ -223,17 +223,17 @@ static int send_error(resset_t *rset, resmsg_t *resreply, void *data)
 
 static void status_method(DBusPendingCall *pend, void *data)
 {
-    resproto_reply_t *reply   = (resproto_reply_t *)data;
-    DBusMessage      *dbusmsg = dbus_pending_call_steal_reply(pend);
-    resset_t         *rset;
-    resproto_t       *rp;
-    resmsg_t          resmsg;
-    const char       *errmsg;
-    int               success;
+    resconn_reply_t *reply   = (resconn_reply_t *)data;
+    DBusMessage     *dbusmsg = dbus_pending_call_steal_reply(pend);
+    resset_t        *rset;
+    resconn_t       *rp;
+    resmsg_t         resmsg;
+    const char      *errmsg;
+    int              success;
 
     if (reply && dbusmsg){
         rset = reply->rset;
-        rp   = rset->resproto;
+        rp   = rset->resconn;
         
         if (dbus_message_get_type(dbusmsg) == DBUS_MESSAGE_TYPE_ERROR) {
             errmsg = dbus_message_get_error_name(dbusmsg);
@@ -301,11 +301,11 @@ static void status_method(DBusPendingCall *pend, void *data)
 }
 
 
-static resproto_t *find_resproto(DBusConnection *conn)
+static resconn_t *find_resproto(DBusConnection *conn)
 {
-    resproto_t *rp = NULL;
+    resconn_t *rp = NULL;
 
-    while ((rp = resproto_list_iterate(rp)) != NULL) {
+    while ((rp = resconn_list_iterate(rp)) != NULL) {
         if (rp->any.transp == RESPROTO_TRANSPORT_DBUS && rp->dbus.conn == conn)
             break;
     }
@@ -313,7 +313,7 @@ static resproto_t *find_resproto(DBusConnection *conn)
     return rp;
 }
 
-static int watch_manager(resproto_dbus_t *rp, int watchit)
+static int watch_manager(resconn_dbus_t *rp, int watchit)
 {
     static char *filter =
         "type='signal',"
@@ -334,7 +334,7 @@ static int watch_manager(resproto_dbus_t *rp, int watchit)
 }
 
 
-static int watch_client(resproto_dbus_t *rp, const char *dbusid, int watchit)
+static int watch_client(resconn_dbus_t *rp, const char *dbusid, int watchit)
 {
     static char *filter_fmt =
         "type='signal',"
@@ -358,7 +358,7 @@ static int watch_client(resproto_dbus_t *rp, const char *dbusid, int watchit)
 }
 
 
-static int add_filter(resproto_dbus_t *rp, char *filter)
+static int add_filter(resconn_dbus_t *rp, char *filter)
 {
     DBusError  err;
 
@@ -373,14 +373,14 @@ static int add_filter(resproto_dbus_t *rp, char *filter)
     return TRUE;
 }
 
-static int remove_filter(resproto_dbus_t *rp, char *filter)
+static int remove_filter(resconn_dbus_t *rp, char *filter)
 {
     dbus_bus_remove_match(rp->conn, filter, NULL);
 
     return TRUE;
 }
 
-static int request_name(resproto_dbus_t *rp, char *name)
+static int request_name(resconn_dbus_t *rp, char *name)
 {
     DBusError  err;
     int        retval;
@@ -404,7 +404,7 @@ static int request_name(resproto_dbus_t *rp, char *name)
     return success;
 }
 
-static int register_manager_object(resproto_dbus_t *rp)
+static int register_manager_object(resconn_dbus_t *rp)
 {
     static struct DBusObjectPathVTable method = {
         .message_function = manager_method
@@ -430,7 +430,7 @@ static DBusHandlerResult manager_name_changed(DBusConnection *conn,
     char              *sender;
     char              *before;
     char              *after;
-    resproto_t        *rp;
+    resconn_t         *rp;
     int                success;
 
     success = dbus_message_is_signal(msg, RESPROTO_DBUS_ADMIN_INTERFACE,
@@ -466,11 +466,11 @@ static DBusHandlerResult client_name_changed(DBusConnection *conn,
     (void)conn;
     (void)user_data;
 
-    char              *sender;
-    char              *before;
-    char              *after;
-    resproto_t        *rp;
-    int                success;
+    char      *sender;
+    char      *before;
+    char      *after;
+    resconn_t *rp;
+    int        success;
 
     success = dbus_message_is_signal(msg, RESPROTO_DBUS_ADMIN_INTERFACE,
                                      RESPROTO_DBUS_NAME_OWNER_CHANGED_SIGNAL);
@@ -516,7 +516,7 @@ static DBusHandlerResult manager_method(DBusConnection *conn,
     const char *member    = dbus_message_get_member(dbusmsg);
     const char *sender    = dbus_message_get_sender(dbusmsg);
     resmsg_t    resmsg;
-    resproto_t *rp;
+    resconn_t  *rp;
     resset_t   *rset;
     char       *method;
 

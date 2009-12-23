@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-union resproto_u;
+union resconn_u;
 
 typedef enum {
     RESPROTO_RSET_STATE_CREATED = 0,
@@ -14,7 +14,7 @@ typedef enum {
 typedef struct resset_s {
     struct resset_s  *next;
     int32_t           refcnt;
-    union resproto_u *resproto;
+    union resconn_u  *resconn;
     char             *peer;
     uint32_t          id;
     resset_state_t    state;
@@ -26,13 +26,13 @@ typedef struct resset_s {
     void             *userdata;
 } resset_t;
 
-resset_t *resset_create(union resproto_u*, const char*,
+resset_t *resset_create(union resconn_u*, const char*,
                         uint32_t, resset_state_t,
                         uint32_t, uint32_t, uint32_t);
 void      resset_destroy(resset_t *);
 void      resset_ref(resset_t *);
 void      resset_unref(resset_t *);
-resset_t *resset_find(union resproto_u *, const char *, uint32_t);
+resset_t *resset_find(union resconn_u *, const char *, uint32_t);
 
 
 #endif /* __RES_SET_H__ */

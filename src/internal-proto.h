@@ -2,7 +2,7 @@
 #define __RES_INTERNAL_H__
 
 #include <stdarg.h>
-#include <res-proto.h>
+#include <res-conn.h>
 
 #define RESPROTO_INTERNAL_MANAGER  "ResourceManager"
 
@@ -15,8 +15,8 @@ typedef struct {
 } resproto_internal_link_t;
 
 
-int  resproto_internal_manager_init(resproto_internal_t *, va_list);
-int  resproto_internal_client_init(resproto_internal_t *, va_list);
+int  resproto_internal_manager_init(resconn_internal_t *, va_list);
+int  resproto_internal_client_init(resconn_internal_t *, va_list);
 
 
 

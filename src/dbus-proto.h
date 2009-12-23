@@ -2,7 +2,7 @@
 #define __RES_DBUS_PROTO_H__
 
 #include <stdarg.h>
-#include <res-proto.h>
+#include <res-conn.h>
 
 /* D-Bus names */
 #define RESPROTO_DBUS_ADMIN_NAME                "org.freedesktop.DBus"
@@ -28,8 +28,8 @@
 #define RESPROTO_DBUS_GRANT_METHOD               "grant"
 #define RESPROTO_DBUS_ADVICE_METHOD              "advice"
 
-int resproto_dbus_manager_init(resproto_dbus_t *, va_list);
-int resproto_dbus_client_init(resproto_dbus_t *, va_list);
+int resproto_dbus_manager_init(resconn_dbus_t *, va_list);
+int resproto_dbus_client_init(resconn_dbus_t *, va_list);
 
 
 

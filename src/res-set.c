@@ -1,11 +1,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "res-proto.h"
+#include <res-conn.h>
 
 
 
-resset_t *resset_create(resproto_t    *rp,
+resset_t *resset_create(resconn_t     *rp,
                         const char    *peer,
                         uint32_t       id,
                         resset_state_t state,
@@ -20,7 +20,7 @@ resset_t *resset_create(resproto_t    *rp,
         memset(rset, 0, sizeof(resset_t));
         rset->next        = rp->any.rsets;
         rset->refcnt      = 1;
-        rset->resproto    = rp;
+        rset->resconn     = rp;
         rset->peer        = strdup(peer);
         rset->id          = id;
         rset->state       = state;
@@ -50,11 +50,11 @@ void resset_ref(resset_t *rset)
  
 void resset_unref(resset_t *rset)
 {
-    resproto_dbus_t  *rp = &rset->resproto->dbus;
-    resset_t         *prev;
-    resproto_reply_t *reply;
-    resproto_reply_t *next;
-    resmsg_t          resmsg;
+    resconn_dbus_t  *rp = &rset->resconn->dbus;
+    resset_t        *prev;
+    resconn_reply_t *reply;
+    resconn_reply_t *next;
+    resmsg_t         resmsg;
 
     if (rset != NULL && --rset->refcnt <= 0) {
  
@@ -74,7 +74,7 @@ void resset_unref(resset_t *rset)
     }
 }
 
-resset_t *resset_find(resproto_t *rp, const char *peer, uint32_t id)
+resset_t *resset_find(resconn_t *rp, const char *peer, uint32_t id)
 {
     resset_t *rset;
 
