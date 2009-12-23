@@ -5,6 +5,8 @@
 
 #include <res-conn.h>
 
+#include "visibility.h"
+
 static resconn_t     *resconn_list;
 
 #define VALID   1
@@ -112,9 +114,9 @@ resconn_t *resconn_init(resproto_role_t       role,
 }
 
 
-resset_t *resconn_connect(resconn_t         *rcon,
-                          resmsg_t          *resmsg,
-                          resproto_status_t  status)
+EXPORT resset_t *resconn_connect(resconn_t         *rcon,
+                                 resmsg_t          *resmsg,
+                                 resproto_status_t  status)
 {
     resset_t *rset;
 
@@ -132,9 +134,9 @@ resset_t *resconn_connect(resconn_t         *rcon,
     return rset;
 }
 
-int resconn_disconnect(resset_t          *rset,
-                       resmsg_t          *resmsg,
-                       resproto_status_t  status)
+EXPORT int resconn_disconnect(resset_t          *rset,
+                              resmsg_t          *resmsg,
+                              resproto_status_t  status)
 {
     resconn_t  *rcon = rset->resconn;
     int         success;

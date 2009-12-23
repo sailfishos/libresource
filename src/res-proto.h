@@ -28,7 +28,7 @@ typedef void   (*resproto_handler_t) (resmsg_t *, resset_t *, void *);
 typedef void   (*resproto_status_t)  (resset_t *, resmsg_t *);
 
 
-union resconn_u *resproto_init(resproto_role_t, resproto_transport_t, ...);
+union resconn_u * resproto_init(resproto_role_t, resproto_transport_t, ...);
 
 int resproto_set_handler(union resconn_u *, resmsg_type_t, resproto_handler_t);
 

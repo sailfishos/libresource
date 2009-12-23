@@ -4,10 +4,17 @@
 
 #include <res-conn.h>
 
+#include "visibility.h"
+
+static char *type_str(resmsg_type_t type);
+static char *res_str(uint32_t, char *, int);
 static char *flag_str(uint32_t);
 
 
-char *resmsg_dump_message(resmsg_t *resmsg, int indent, char *buf, int len)
+EXPORT char *resmsg_dump_message(resmsg_t *resmsg,
+                                 int       indent,
+                                 char     *buf,
+                                 int       len)
 {
 #define PRINT(fmt, args...)                                              \
     do {                                                                 \
@@ -35,7 +42,7 @@ char *resmsg_dump_message(resmsg_t *resmsg, int indent, char *buf, int len)
     memset(spaces, ' ', sizeof(spaces));
     spaces[indent < sizeof(spaces) ? indent : sizeof(spaces)-1] = '\0';
 
-    PRINT("type      : %s (%d)",  resmsg_type_str(resmsg->type), resmsg->type);
+    PRINT("type      : %s (%d)",  type_str(resmsg->type), resmsg->type);
     PRINT("id        : %u"     ,  resmsg->any.id);
     PRINT("reqno     : %u"     ,  resmsg->any.reqno);
 
@@ -45,9 +52,9 @@ char *resmsg_dump_message(resmsg_t *resmsg, int indent, char *buf, int len)
     case RESMSG_UPDATE:
         record = &resmsg->record;
         rset   = &record->rset;
-        PRINT("rset.all  : %s"  , resmsg_res_str(rset->all  , r, sizeof(r)));
-        PRINT("rset.share: %s"  , resmsg_res_str(rset->share, r, sizeof(r)));
-        PRINT("rset.opt  : %s"  , resmsg_res_str(rset->opt  , r, sizeof(r)));
+        PRINT("rset.all  : %s"  , res_str(rset->all  , r, sizeof(r)));
+        PRINT("rset.share: %s"  , res_str(rset->share, r, sizeof(r)));
+        PRINT("rset.opt  : %s"  , res_str(rset->opt  , r, sizeof(r)));
         PRINT("class     : '%s'", record->class && record->class[0] ?
                                          record->class : "<unknown>");
         break;
@@ -61,7 +68,7 @@ char *resmsg_dump_message(resmsg_t *resmsg, int indent, char *buf, int len)
     case RESMSG_GRANT:
     case RESMSG_ADVICE:
         notify = &resmsg->notify;
-        PRINT("resrc     : %s", resmsg_res_str(notify->resrc, r, sizeof(r)));
+        PRINT("resrc     : %s", res_str(notify->resrc, r, sizeof(r)));
         break;
 
     case RESMSG_STATUS:
@@ -79,7 +86,7 @@ char *resmsg_dump_message(resmsg_t *resmsg, int indent, char *buf, int len)
 #undef PRINT
 }
 
-char *resmsg_type_str(resmsg_type_t type)
+static char *type_str(resmsg_type_t type)
 {
     char *str;
 
@@ -100,7 +107,7 @@ char *resmsg_type_str(resmsg_type_t type)
 
 
 
-char *resmsg_res_str(uint32_t res, char *buf, int len)
+static char *res_str(uint32_t res, char *buf, int len)
 {
     char    *p;
     char    *s;

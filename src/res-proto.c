@@ -8,16 +8,15 @@
 #include "dbus-proto.h"
 #include "internal-msg.h"
 #include "internal-proto.h"
-
+#include "visibility.h"
 
 static uint32_t  internal_reqno;
 
-
 static void message_receive(resmsg_t *, resset_t *, void *);
 
-resconn_t *resproto_init(resproto_role_t       role,
-                         resproto_transport_t  transp,
-                         ...    /* role & transport specific args */ )
+EXPORT resconn_t *resproto_init(resproto_role_t       role,
+                                resproto_transport_t  transp,
+                                ...    /* role & transport specific args */ )
 {
     va_list    args;
     resconn_t *rcon;
@@ -34,9 +33,9 @@ resconn_t *resproto_init(resproto_role_t       role,
 }
 
 
-int resproto_set_handler(resconn_t           *rcon,
-                         resmsg_type_t        type,
-                         resproto_handler_t   handler)
+EXPORT int resproto_set_handler(resconn_t           *rcon,
+                                resmsg_type_t        type,
+                                resproto_handler_t   handler)
 {
     if (type < 0 || type >= RESMSG_MAX || !rcon->any.valid[type] || !handler)
         return FALSE;
@@ -46,9 +45,9 @@ int resproto_set_handler(resconn_t           *rcon,
     return TRUE;
 }
 
-int resproto_send_message(resset_t          *rset,
-                          resmsg_t          *resmsg,
-                          resproto_status_t  status)
+EXPORT int resproto_send_message(resset_t          *rset,
+                                 resmsg_t          *resmsg,
+                                 resproto_status_t  status)
 {
     resconn_t       *rcon = rset->resconn;
     resproto_role_t  role = rcon->any.role;
@@ -64,11 +63,11 @@ int resproto_send_message(resset_t          *rset,
     return success;
 }
 
-int resproto_reply_message(resset_t   *rset,
-                           resmsg_t   *resmsg,
-                           void       *protodata,
-                           int32_t     errcod,
-                           const char *errmsg)
+EXPORT int resproto_reply_message(resset_t   *rset,
+                                  resmsg_t   *resmsg,
+                                  void       *protodata,
+                                  int32_t     errcod,
+                                  const char *errmsg)
 {
     resconn_t *rcon = rset->resconn;
     resmsg_t   reply;
