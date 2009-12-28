@@ -59,7 +59,7 @@ static void     destroy_dbus(void);
 
 static void     create_manager(void);
 static void     destroy_manager();
-static void     connect_to_manager(resconn_t *rc);
+static void     connect_to_manager(resconn_t *);
 static void     manager_status(resset_t *, resmsg_t *);
 static void     manager_receive_message(resmsg_t *, resset_t *, void *);
 static void     manager_send_message(resmsg_t *);
@@ -212,8 +212,10 @@ static void accept_input(int accept)
 
 static void print_input(void)
 {
-    printf(">%s", input.buf);
-    fflush(stdout);
+    if (input.accept) {
+        printf(">%s", input.buf);
+        fflush(stdout);
+    }
 }
 
 static char *skip_whitespaces(char *str)
@@ -365,6 +367,9 @@ static void create_dbus(void)
     if ((dconn = dbus_bus_get(DBUS_BUS_SESSION, &err)) == NULL) {
         print_error("Can't get session bus");
     }
+
+    dbus_connection_setup_with_g_main(dconn, NULL);
+    
 }
 
 static void destroy_dbus(void)
@@ -419,21 +424,24 @@ static void connect_to_manager(resconn_t *rc)
 
 static void manager_status(resset_t *rset, resmsg_t *msg)
 {
-    char *str;
-    int   idx;
+    char          *str;
+    int            idx;
+    resmsg_type_t  type;
 
     if (msg->type != RESMSG_STATUS)
         print_error("%s(): got confused with data structures", __FUNCTION__);
     else {
         idx = REQHASH_INDEX(msg->status.reqno);
+        type = reqtyp[idx];
 
         if (msg->status.errcod) {
             str = resmsg_type_str(reqtyp[idx]);
             print_message("%s request failed (%d): %s",
                           str, msg->status.errcod, msg->status.errmsg);
+            print_input();
         }
         else {
-            switch (reqtyp[idx]) {
+            switch (type) {
             case RESMSG_REGISTER:        accept_input(TRUE);      break;
             case RESMSG_UNREGISTER:      accept_input(FALSE);     break;
             default:                                              break;
@@ -503,7 +511,8 @@ static void print_error(char *fmt, ...)
     va_list  ap;
     char     fmtbuf[512];
 
-    snprintf(fmtbuf, sizeof(fmtbuf), "%s: %s\n", exe_name, fmt);
+    snprintf(fmtbuf, sizeof(fmtbuf), "%s%s: %s\n",
+             input.accept ? "\n" : "", exe_name, fmt);
 
     va_start(ap, fmt);
     vprintf(fmtbuf, ap);
@@ -517,7 +526,8 @@ static void print_message(char *fmt, ...)
     va_list  ap;
     char     fmtbuf[512];
 
-    snprintf(fmtbuf, sizeof(fmtbuf), "%s: %s\n", exe_name, fmt);
+    snprintf(fmtbuf, sizeof(fmtbuf), "%s%s: %s\n",
+             input.accept ? "\n" : "", exe_name, fmt);
 
     va_start(ap, fmt);
     vprintf(fmtbuf, ap);

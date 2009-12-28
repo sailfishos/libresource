@@ -52,8 +52,8 @@ int resproto_internal_manager_init(resconn_internal_t *rcon, va_list args)
         rcon->send      = send_message;
         rcon->error     = send_error_init;
         rcon->name      = strdup(RESPROTO_INTERNAL_MANAGER);
-        rcon->queue.head.next = (resconn_qitem_t *)&rcon->queue.head;
-        rcon->queue.head.prev = (resconn_qitem_t *)&rcon->queue.head;
+        rcon->queue.head.next = (void *)&rcon->queue.head;
+        rcon->queue.head.prev = (void *)&rcon->queue.head;
         rcon->timer.add = timer_add;
         rcon->timer.del = timer_del;
 
@@ -77,8 +77,8 @@ int resproto_internal_client_init(resconn_internal_t *rcon, va_list args)
     rcon->error     = send_error_init;
     rcon->mgrup     = mgrup;
     rcon->name      = strdup(name);
-    rcon->queue.head.next = (resconn_qitem_t *)&rcon->queue.head;
-    rcon->queue.head.prev = (resconn_qitem_t *)&rcon->queue.head;
+    rcon->queue.head.next = (void *)&rcon->queue.head;
+    rcon->queue.head.prev = (void *)&rcon->queue.head;
     rcon->timer.add = timer_add;
     rcon->timer.del = timer_del;
   
@@ -394,8 +394,7 @@ static void queue_append_item(resconn_qhead_t *queue, resconn_qitem_t *item)
 
 static resconn_qitem_t *queue_pop_item(resconn_qhead_t *queue)
 {
-    resmsg_t        *msg = NULL;
-    resconn_qitem_t *item;
+    resconn_qitem_t *item = NULL;
     resconn_qitem_t *prev;
     resconn_qitem_t *next;
 

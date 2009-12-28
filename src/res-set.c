@@ -53,9 +53,6 @@ void resset_unref(resset_t *rset)
 {
     resconn_dbus_t  *rcon = &rset->resconn->dbus;
     resset_t        *prev;
-    resconn_reply_t *reply;
-    resconn_reply_t *next;
-    resmsg_t         resmsg;
 
     if (rset != NULL && --rset->refcnt <= 0) {
  

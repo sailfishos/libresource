@@ -120,12 +120,11 @@ static resset_t *connect_fail(resconn_t *rcon, resmsg_t *resmsg)
     return NULL;
 }
 
-static int send_message(resset_t          *rset,
-                        resmsg_t          *resmsg,
-                        resproto_status_t  status)
+static int send_message(resset_t *rset,resmsg_t *rmsg,resproto_status_t status)
 {
     resconn_dbus_t  *rcon;
-    DBusMessage     *dbusmsg;
+    DBusConnection  *dcon;
+    DBusMessage     *dmsg;
     char            *dest;
     char            *path;
     char            *iface;
@@ -139,15 +138,16 @@ static int send_message(resset_t          *rset,
     resconn_reply_t *reply;
     int              success;
 
-    if (!rset || !resmsg)
+    if (!rset || !rmsg)
         return FALSE;
 
     rcon = &rset->resconn->dbus;
+    dcon = rcon->conn;
     
     switch (rcon->role) {
         
     case RESPROTO_ROLE_MANAGER:
-        snprintf(buf, sizeof(buf), RESPROTO_DBUS_CLIENT_PATH, resmsg->any.id);
+        snprintf(buf, sizeof(buf), RESPROTO_DBUS_CLIENT_PATH, rmsg->any.id);
         path  = buf;
         iface = RESPROTO_DBUS_CLIENT_INTERFACE;
         break;
@@ -161,48 +161,44 @@ static int send_message(resset_t          *rset,
         return FALSE;
     }
 
+    success = FALSE;
 
-    if (!(dest   = rset->peer)  ||
-        !(method = method_name(resmsg->type)) ||
-        !(dbusmsg= resmsg_dbus_compose_message(dest,path,iface,method,resmsg)))
+    if ((dest = rset->peer) && (method  = method_name(rmsg->type)) &&
+        (dmsg = resmsg_dbus_compose_message(dest,path,iface,method,rmsg)))
     {
-        success = FALSE;
-    }
-    else {
         if (rcon->role != RESPROTO_ROLE_CLIENT)
             need_reply = status ? TRUE : FALSE;
         else {
-            switch (resmsg->any.type) {
+            switch (rmsg->any.type) {
             case RESMSG_REGISTER:    need_reply = TRUE;                  break;
             case RESMSG_UNREGISTER:  need_reply = TRUE;                  break;
             default:                 need_reply = status ? TRUE : FALSE; break;
             }
         }
 
+
         if (!need_reply)
-            success = dbus_connection_send(rcon->conn, dbusmsg, NULL);
+            success = dbus_connection_send(dcon, dmsg, NULL);
         else {
-            do {
-                success = dbus_connection_send_with_reply(rcon->conn, dbusmsg,
-                                                          &pend, timeout);
-                if (!success)
-                    break;
+            success = dbus_connection_send_with_reply(dcon,dmsg,&pend,timeout);
 
-                type   = resmsg->type;
-                serial = dbus_message_get_serial(dbusmsg);
-                reqno  = resmsg->any.reqno;
-                reply  = resconn_reply_create(type,serial,reqno,rset,status);
+            if (success) {
+                type    = rmsg->type;
+                serial  = dbus_message_get_serial(dmsg);
+                reqno   = rmsg->any.reqno;
+                reply   = resconn_reply_create(type,serial,reqno,rset,status);
 
-                success = dbus_pending_call_set_notify(pend, status_method,
+                success = dbus_pending_call_set_notify(pend,
+                                                       status_method,
                                                        reply,
                                                        resconn_reply_destroy);
-            } while(0);
+            }
         }
 
         if (success)
             resset_ref(rset);
 
-        dbus_message_unref(dbusmsg);
+        dbus_message_unref(dmsg);
     }
     
     return success;
@@ -215,7 +211,6 @@ static int send_error(resset_t *rset, resmsg_t *resreply, void *data)
     DBusMessage    *dbusmsg   = (DBusMessage *)data;
     dbus_uint32_t   serial    = dbus_message_get_serial(dbusmsg);
     DBusMessage    *dbusreply = resmsg_dbus_reply_message(dbusmsg, resreply);
-    int             success;
 
     dbus_connection_send(dcon, dbusreply, &serial);
     dbus_message_unref(dbusreply);
@@ -232,7 +227,6 @@ static void status_method(DBusPendingCall *pend, void *data)
     resconn_t       *rcon;
     resmsg_t         resmsg;
     const char      *errmsg;
-    int              success;
 
     if (reply && dbusmsg){
         rset = reply->rset;
@@ -260,6 +254,12 @@ static void status_method(DBusPendingCall *pend, void *data)
                 resmsg.status.id    != rset->id                         ||
                 resmsg.status.reqno != reply->reqno                       )
             {
+                printf("serial(%u,%u) type(%d,%d) id(%u,%u) reqno(%u,%u)\n",
+                       reply->serial, dbus_message_get_reply_serial(dbusmsg),
+                       resmsg.status.type, RESMSG_STATUS, 
+                       resmsg.status.id, rset->id,
+                       resmsg.status.reqno, reply->reqno);
+
                 memset(&resmsg, 0, sizeof(resmsg));
                 resmsg.status.type   = RESMSG_STATUS;
                 resmsg.status.id     = rset->id;
@@ -455,6 +455,8 @@ static DBusHandlerResult manager_name_changed(DBusConnection *dcon,
         if ((rcon = find_resproto(dcon)) != NULL) {
             if (!after || !strcmp(after, "")) {
                 /* client is gone */
+                watch_client(&rcon->dbus, sender, FALSE);
+
                 if (rcon->any.link)
                     rcon->any.link(rcon, RESPROTO_LINK_DOWN);
             }
@@ -557,7 +559,7 @@ static DBusHandlerResult manager_method(DBusConnection *dcon,
                                      resmsg.record.rset.share,
                                      resmsg.record.rset.opt);
 
-                if (rset != NULL) {
+                if (rset != NULL && watch_client(&rcon->dbus, sender, TRUE)) {
                     dbus_message_ref(dbusmsg);
                     rcon->dbus.receive(&resmsg, rset, dbusmsg);
                 }

@@ -4,7 +4,8 @@
 #include <stdarg.h>
 
 #include "res-conn-private.h"
-
+#include "dbus-proto.h"
+#include "internal-proto.h"
 #include "visibility.h"
 
 static resconn_t     *resconn_list;
@@ -166,7 +167,7 @@ resconn_reply_t *resconn_reply_create(resmsg_type_t       type,
     resconn_reply_t *reply;
     resconn_reply_t *last;
 
-    for (last = (resconn_reply_t *)&rcon->replies; last->next; last = last->next)
+    for (last = (void *)&rcon->replies;   last->next;   last = last->next)
         ;
 
     if ((reply = malloc(sizeof(resconn_reply_t))) != NULL) {
@@ -195,7 +196,7 @@ void resconn_reply_destroy(void *ptr)
         if ((rset  = reply->rset  ) != NULL &&
             (rcon    = rset->resconn) != NULL    )
         {
-            for (prev = (resconn_reply_t *)&rcon->any.replies;
+            for (prev = (void *)&rcon->any.replies;
                  prev->next != NULL;
                  prev = prev->next)
             {
@@ -257,8 +258,6 @@ static void client_link_handler(resconn_t *rcon, resproto_linkst_t state)
 
             rcon->any.disconn(rset);
         }
-        if (rcon->any.rsets == NULL)
-            printf("No hanging rset\n");
         break;
 
     default:

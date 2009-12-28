@@ -4,13 +4,13 @@
 #include <stdarg.h>
 
 #include <res-proto.h>
+#include "res-conn-private.h"
 #include "dbus-msg.h"
 #include "dbus-proto.h"
 #include "internal-msg.h"
 #include "internal-proto.h"
 #include "visibility.h"
 
-static uint32_t  internal_reqno;
 
 static void message_receive(resmsg_t *, resset_t *, void *);
 
@@ -23,13 +23,15 @@ EXPORT resconn_t *resproto_init(resproto_role_t       role,
 
     va_start(args, transp);
 
+    rcon = resconn_init(role, transp, args);
+
     if (rcon != NULL) {
         rcon->any.receive = message_receive;        
     }
 
     va_end(args);
 
-        return rcon;
+    return rcon;
 }
 
 
@@ -50,7 +52,6 @@ EXPORT int resproto_send_message(resset_t          *rset,
                                  resproto_status_t  status)
 {
     resconn_t       *rcon = rset->resconn;
-    resproto_role_t  role = rcon->any.role;
     resmsg_type_t    type = resmsg->type;
     int              success;
 

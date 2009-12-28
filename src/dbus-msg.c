@@ -16,7 +16,6 @@ DBusMessage *resmsg_dbus_compose_message(const char *dest,
     resmsg_record_t  *record;
     resmsg_possess_t *possess;
     resmsg_notify_t  *notify;
-    resmsg_status_t  *status;
     int               success;
 
     if (!dest || !path || !interface || !method || !resmsg)
@@ -89,7 +88,6 @@ DBusMessage *resmsg_dbus_reply_message(DBusMessage *dbusmsg,resmsg_t *resreply)
 
     DBusMessage       *dbusreply;
     resmsg_status_t   *status;
-    dbus_uint32_t      serial;
     int                success;
 
     if (!dbusmsg || !resreply || resreply->type != RESMSG_STATUS)
