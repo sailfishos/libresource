@@ -4,6 +4,10 @@
 #include <res-msg.h>
 #include <res-set.h>
 
+#ifdef	__cplusplus
+extern "C" {
+#endif
+
 union resconn_u;
 
 typedef enum {
@@ -34,6 +38,10 @@ int resproto_set_handler(union resconn_u *, resmsg_type_t, resproto_handler_t);
 
 int resproto_send_message(resset_t *, resmsg_t *, resproto_status_t);
 int resproto_reply_message(resset_t *,resmsg_t *,void *,int32_t,const char *);
+
+#ifdef	__cplusplus
+};
+#endif
 
 
 #endif /* __RES_PROTO_H__ */

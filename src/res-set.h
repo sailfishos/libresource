@@ -3,6 +3,12 @@
 
 #include <stdint.h>
 
+#ifdef	__cplusplus
+extern "C" {
+#endif
+
+
+
 union resconn_u;
 
 typedef enum {
@@ -26,6 +32,10 @@ typedef struct resset_s {
     void             *userdata;
 } resset_t;
 
+
+#ifdef	__cplusplus
+};
+#endif
 
 #endif /* __RES_SET_H__ */
 

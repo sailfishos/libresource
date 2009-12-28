@@ -6,6 +6,10 @@
 
 #include <res-proto.h>
 
+#ifdef	__cplusplus
+extern "C" {
+#endif
+
 
 typedef void        (*resconn_link_t)     (union resconn_u*,resproto_linkst_t);
 typedef void        (*resconn_receive_t)  (resmsg_t *, resset_t *, void *);
@@ -100,6 +104,11 @@ typedef union resconn_u {
 resset_t  *resconn_connect(resconn_t *, resmsg_t *, resproto_status_t);
 int        resconn_disconnect(resset_t *, resmsg_t *, resproto_status_t);
 
+
+
+#ifdef	__cplusplus
+};
+#endif
 
 #endif /* __RES_CONN_H__ */
 

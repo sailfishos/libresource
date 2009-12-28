@@ -3,6 +3,11 @@
 
 #include <stdint.h>
 
+#ifdef	__cplusplus
+extern "C" {
+#endif
+
+
 #define RESMSG_BIT(n) (((uint32_t)1) << (n))
 
 #define RESMSG_AUDIO_PLAYBACK      RESMSG_BIT(0)
@@ -79,6 +84,10 @@ char *resmsg_dump_message(resmsg_t *, int, char *, int);
 char *resmsg_type_str(resmsg_type_t);
 char *resmsg_res_str(uint32_t, char *, int);
 
+
+#ifdef	__cplusplus
+};
+#endif
 
 #endif /* __RES_MESSAGE_H__ */
 
