@@ -76,6 +76,8 @@ typedef union resmsg_u {
 
 
 char *resmsg_dump_message(resmsg_t *, int, char *, int);
+char *resmsg_type_str(resmsg_type_t);
+char *resmsg_res_str(uint32_t, char *, int);
 
 
 #endif /* __RES_MESSAGE_H__ */
