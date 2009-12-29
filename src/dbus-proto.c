@@ -100,14 +100,15 @@ int resproto_dbus_client_init(resconn_dbus_t *rcon, va_list args)
 
 static resset_t *connect_to_manager(resconn_t *rcon, resmsg_t *resmsg)
 {
-    char          *name   = RESPROTO_DBUS_MANAGER_NAME;
+    char          *name  =  RESPROTO_DBUS_MANAGER_NAME;
+    uint32_t       id    =  resmsg->record.id;
     resmsg_rset_t *flags = &resmsg->record.rset;
-    uint32_t       id     = resmsg->any.id;
+    const char    *class =  resmsg->record.class;
     resset_t      *rset;
 
     if ((rset = resset_find(rcon, name, id)) == NULL) {
         rset = resset_create(rcon, name, id, RESPROTO_RSET_STATE_CREATED,
-                             flags->all, flags->share, flags->opt);
+                             class, flags->all, flags->share, flags->opt);
     }
 
     return rset;
@@ -560,6 +561,7 @@ static DBusHandlerResult manager_method(DBusConnection *dcon,
             if (resmsg.type == RESMSG_REGISTER) {
                 rset = resset_create(rcon, sender, resmsg.any.id,
                                      RESPROTO_RSET_STATE_CONNECTED,
+                                     resmsg.record.class,
                                      resmsg.record.rset.all,
                                      resmsg.record.rset.share,
                                      resmsg.record.rset.opt);

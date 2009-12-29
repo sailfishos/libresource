@@ -24,6 +24,7 @@ typedef struct resset_s {
     char             *peer;
     uint32_t          id;
     resset_state_t    state;
+    char             *class;
     struct {
         uint32_t all;
         uint32_t share;

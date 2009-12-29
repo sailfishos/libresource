@@ -87,14 +87,15 @@ int resproto_internal_client_init(resconn_internal_t *rcon, va_list args)
 
 static resset_t *connect_to_manager(resconn_t *rcon, resmsg_t *resmsg)
 {
-    char          *name = RESPROTO_INTERNAL_MANAGER;
-    uint32_t       id   = resmsg->any.id;
+    char          *name  =  RESPROTO_INTERNAL_MANAGER;
+    uint32_t       id    =  resmsg->any.id;
     resmsg_rset_t *flags = &resmsg->record.rset;
+    const char    *class =  resmsg->record.class;
     resset_t      *rset;
 
     if ((rset = resset_find(rcon, name, id)) == NULL)
         rset = resset_create(rcon, name, id, RESPROTO_RSET_STATE_CREATED,
-                             flags->all, flags->share, flags->opt);
+                             class, flags->all, flags->share, flags->opt);
 
     return rset;
 }
@@ -283,6 +284,7 @@ static void receive_message_init(resconn_internal_t *rcon,
     resconn_qitem_t  buf;
     resconn_qitem_t *item;
     resmsg_rset_t   *flags;
+    const char      *class;
     
 
 
@@ -290,12 +292,13 @@ static void receive_message_init(resconn_internal_t *rcon,
     queue_was_empty = queue_is_empty(&rcon->queue.head);
 
     if (msg->type == RESMSG_REGISTER) {
+        class =  msg->record.class;
         flags = &msg->record.rset;
 
         if ((resset_find((resconn_t *)rcon, peer, msg->any.id)) == NULL) {
             resset_create((resconn_t *)rcon, peer, msg->any.id,
                           RESPROTO_RSET_STATE_CONNECTED,
-                          flags->all, flags->share, flags->opt);
+                          class, flags->all, flags->share, flags->opt);
         }
     }
 
