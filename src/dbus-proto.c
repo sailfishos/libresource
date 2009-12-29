@@ -105,9 +105,10 @@ static resset_t *connect_to_manager(resconn_t *rcon, resmsg_t *resmsg)
     uint32_t       id     = resmsg->any.id;
     resset_t      *rset;
 
-    if ((rset = resset_find(rcon, name, id)) == NULL)
+    if ((rset = resset_find(rcon, name, id)) == NULL) {
         rset = resset_create(rcon, name, id, RESPROTO_RSET_STATE_CREATED,
                              flags->all, flags->share, flags->opt);
+    }
 
     return rset;
 }

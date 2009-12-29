@@ -19,7 +19,7 @@ EXPORT char *resmsg_dump_message(resmsg_t *resmsg,
     do {                                                                 \
         if (len > 0) {                                                   \
             p += (l = snprintf(p, len, "%s" fmt "\n", spaces, ##args));  \
-            l -= len;                                                    \
+            len -= l;                                                    \
         }                                                                \
     } while(0)
 
@@ -79,6 +79,10 @@ EXPORT char *resmsg_dump_message(resmsg_t *resmsg,
     default:
         break;
     }
+
+    /* remove the last newline, if any */
+    if (--p > buf && *p == '\n')
+        *p = '\0';
 
     return buf;
 
