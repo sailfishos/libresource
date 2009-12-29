@@ -36,8 +36,8 @@ static int client_valid_message[RESMSG_MAX] = {
 #undef VALID
 
 
-static void manager_link_handler(resconn_t *, resproto_linkst_t);
-static void client_link_handler(resconn_t *, resproto_linkst_t);
+static int manager_link_handler(resconn_t *, char *, resproto_linkst_t);
+static int client_link_handler(resconn_t *, char *, resproto_linkst_t);
 
 static void resconn_list_add(resconn_t *);
 static void resconn_list_delete(resconn_t *);
@@ -225,11 +225,46 @@ resconn_reply_t *resconn_reply_find(resconn_t *rcon, uint32_t serial)
 }
 
 
-static void manager_link_handler(resconn_t *rcon, resproto_linkst_t state)
+static int manager_link_handler(resconn_t         *rcon,
+                                char              *peer,
+                                resproto_linkst_t  state)
 {
+    resset_t            *rset;
+    resset_t            *next;
+    resmsg_t             resmsg;
+    int                  found;
+    resproto_handler_t   handler;
+
+
+    (void)state;                /* supposed to be always RESPROTO_LINK_DOWN */
+
+    found   = FALSE;
+    handler = rcon->any.handler[RESMSG_UNREGISTER];
+
+    memset(&resmsg, 0, sizeof(resmsg));
+    resmsg.possess.type = RESMSG_UNREGISTER;
+
+    for (rset = rcon->any.rsets;    rset != NULL;    rset = next) {
+        next = rset->next;
+
+        if (!strcmp(peer, rset->peer)) {
+            if (handler && rset->state == RESPROTO_RSET_STATE_CONNECTED) {
+                resmsg.possess.id = rset->id;
+                handler(&resmsg, rset, NULL);
+            }
+
+            rcon->any.disconn(rset);
+
+            found = TRUE;
+        }
+    }
+
+    return found;
 }
 
-static void client_link_handler(resconn_t *rcon, resproto_linkst_t state)
+static int client_link_handler(resconn_t         *rcon,
+                               char              *peer,
+                               resproto_linkst_t  state)
 {
     resset_t          *rset, *next;
     resmsg_t           resmsg;
@@ -263,6 +298,8 @@ static void client_link_handler(resconn_t *rcon, resproto_linkst_t state)
     default:
         break;
     }
+
+    return FALSE;
 }
 
 

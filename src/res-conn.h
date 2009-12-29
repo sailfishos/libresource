@@ -11,12 +11,13 @@ extern "C" {
 #endif
 
 
-typedef void        (*resconn_link_t)     (union resconn_u*,resproto_linkst_t);
+typedef int         (*resconn_link_t)     (union resconn_u*, char *,
+                                           resproto_linkst_t);
 typedef void        (*resconn_receive_t)  (resmsg_t *, resset_t *, void *);
 typedef resset_t   *(*resconn_connect_t)  (union resconn_u *,resmsg_t *);
 typedef void        (*resconn_disconn_t)  (resset_t *);
 typedef int         (*resconn_send_t)     (resset_t *, resmsg_t *,
-                                            resproto_status_t);
+                                           resproto_status_t);
 typedef int         (*resconn_error_t)    (resset_t *, resmsg_t *, void *);
 typedef void        (*resconn_linkup_t)   (union resconn_u *);
 

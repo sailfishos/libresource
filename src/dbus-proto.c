@@ -437,33 +437,39 @@ static DBusHandlerResult manager_name_changed(DBusConnection *dcon,
     char              *after;
     resconn_t         *rcon;
     int                success;
-
+    DBusHandlerResult  result;
+  
+    result  = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
     success = dbus_message_is_signal(msg, RESPROTO_DBUS_ADMIN_INTERFACE,
                                      RESPROTO_DBUS_NAME_OWNER_CHANGED_SIGNAL);
 
-    if (!success)
-        return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 
+    if (success) {
+        success = dbus_message_get_args(msg, NULL,
+                                        DBUS_TYPE_STRING, &sender,
+                                        DBUS_TYPE_STRING, &before,
+                                        DBUS_TYPE_STRING, &after,
+                                        DBUS_TYPE_INVALID);
+        
+        if (success && sender != NULL && before != NULL) {
 
-    success = dbus_message_get_args(msg, NULL,
-                                    DBUS_TYPE_STRING, &sender,
-                                    DBUS_TYPE_STRING, &before,
-                                    DBUS_TYPE_STRING, &after,
-                                    DBUS_TYPE_INVALID);
-    
-    if (success && sender != NULL && before != NULL) {
-        if ((rcon = find_resproto(dcon)) != NULL) {
-            if (!after || !strcmp(after, "")) {
-                /* client is gone */
-                watch_client(&rcon->dbus, sender, FALSE);
-
-                if (rcon->any.link)
-                    rcon->any.link(rcon, RESPROTO_LINK_DOWN);
-            }
+            if ((rcon = find_resproto(dcon)) != NULL) {
+                                
+                if (!after || !strcmp(after, "")) {
+                    /* client is gone */
+                    
+                    if (rcon->any.link) {
+                        if (rcon->any.link(rcon, sender, RESPROTO_LINK_DOWN)) {
+                            watch_client(&rcon->dbus, sender, FALSE);
+                            result = DBUS_HANDLER_RESULT_HANDLED;
+                        }
+                    }
+                }
+            }    
         }
     }
-
-    return DBUS_HANDLER_RESULT_HANDLED;
+     
+    return result;
 }
 
 static DBusHandlerResult client_name_changed(DBusConnection *dcon,
@@ -481,34 +487,32 @@ static DBusHandlerResult client_name_changed(DBusConnection *dcon,
     success = dbus_message_is_signal(msg, RESPROTO_DBUS_ADMIN_INTERFACE,
                                      RESPROTO_DBUS_NAME_OWNER_CHANGED_SIGNAL);
 
-    if (!success)
-        return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
-
-
-    success = dbus_message_get_args(msg, NULL,
-                                    DBUS_TYPE_STRING, &sender,
-                                    DBUS_TYPE_STRING, &before,
-                                    DBUS_TYPE_STRING, &after,
-                                    DBUS_TYPE_INVALID);
+    if (success) {
+        success = dbus_message_get_args(msg, NULL,
+                                        DBUS_TYPE_STRING, &sender,
+                                        DBUS_TYPE_STRING, &before,
+                                        DBUS_TYPE_STRING, &after,
+                                        DBUS_TYPE_INVALID);
     
-    if (success && sender && !strcmp(sender, RESPROTO_DBUS_MANAGER_NAME)) {
-        if ((rcon = find_resproto(dcon)) != NULL) {
-
-            if (after && strcmp(after, "")) {
-                /* manager is up */
-                if (rcon->any.link)
-                    rcon->any.link(rcon, RESPROTO_LINK_UP);
+        if (success && sender && !strcmp(sender, RESPROTO_DBUS_MANAGER_NAME)) {
+            if ((rcon = find_resproto(dcon)) != NULL) {
+                
+                if (after && strcmp(after, "")) {
+                    /* manager is up */
+                    if (rcon->any.link)
+                        rcon->any.link(rcon, after, RESPROTO_LINK_UP);
+                }
+                
+                else if (before && (!after || !strcmp(after, ""))) {
+                    /* manager is gone */
+                    if (rcon->any.link)
+                        rcon->any.link(rcon, before, RESPROTO_LINK_DOWN);
+                } 
             }
-            
-            else if (before && (!after || !strcmp(after, ""))) {
-                /* manager is gone */
-                if (rcon->any.link)
-                    rcon->any.link(rcon, RESPROTO_LINK_DOWN);
-            } 
         }
     }
 
-    return DBUS_HANDLER_RESULT_HANDLED;
+    return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 }
 
 static DBusHandlerResult manager_method(DBusConnection *dcon,
