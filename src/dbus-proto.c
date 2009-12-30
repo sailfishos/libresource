@@ -542,9 +542,7 @@ static DBusHandlerResult manager_method(DBusConnection *dcon,
     if (resmsg_dbus_parse_message(dbusmsg, &resmsg) != NULL) {
         method = method_name(resmsg.type);
 
-        if (method && !strcmp(method, member) &&
-            (rcon = find_resproto(dcon)) != NULL )
-        {
+        if (method && !strcmp(method, member) && (rcon = find_resproto(dcon))){
             for (rset = rcon->any.rsets;   rset;   rset = rset->next) {
 
                 if (!strcmp(sender, rset->peer) && resmsg.any.id == rset->id) {
