@@ -25,6 +25,7 @@ typedef struct {
     uint32_t        id;
     char           *class;
     resmsg_rset_t   rset;
+    int             verbose;
 } conf_t;
 
 typedef struct {
@@ -469,18 +470,33 @@ static void manager_receive_message(resmsg_t *msg, resset_t *rs, void *data)
             break;
 
         case RESMSG_GRANT:
-            print_message("manager granted the following resources: %s",
-                          resmsg_res_str(msg->notify.resrc, buf, sizeof(buf)));
+            resmsg_res_str(msg->notify.resrc, buf, sizeof(buf));
+            if (config.verbose)
+                print_message("manager granted the resources: %s", buf);
+            else 
+                print_message("granted: %s", buf);
+            print_input();
             break;
 
         case RESMSG_ADVICE:
-            print_message("the following resources might be acquired: %s",
-                          resmsg_res_str(msg->notify.resrc, buf, sizeof(buf)));
+            resmsg_res_str(msg->notify.resrc, buf, sizeof(buf));
+            if (config.verbose)
+                print_message("resources might be acquired: %s", buf);
+            else
+                print_message("advice: %s", buf);
+            print_input();
             break;
 
         default:
-            print_message("%s(): unexpected message type %d (%s)",
-                          __FUNCTION__, msg->type, resmsg_type_str(msg->type));
+            if (config.verbose) {
+                print_message("%s(): unexpected message type %d (%s)",
+                              __FUNCTION__, msg->type, 
+                              resmsg_type_str(msg->type));
+            }
+            else {
+                print_message("error: wrong message (%d)", msg->type);
+            }
+            
             print_input();
             break;
         }
@@ -511,8 +527,14 @@ static void print_error(char *fmt, ...)
     va_list  ap;
     char     fmtbuf[512];
 
-    snprintf(fmtbuf, sizeof(fmtbuf), "%s%s: %s\n",
-             input.accept ? "\n" : "", exe_name, fmt);
+    if (config.verbose) {
+        snprintf(fmtbuf, sizeof(fmtbuf), "%s%s: %s\n",
+                 input.accept ? "\n" : "", exe_name, fmt);
+    }
+    else {
+        snprintf(fmtbuf, sizeof(fmtbuf), "%s%s\n",
+                 input.accept ? "\n" : "", fmt);
+    }
 
     va_start(ap, fmt);
     vprintf(fmtbuf, ap);
@@ -526,8 +548,14 @@ static void print_message(char *fmt, ...)
     va_list  ap;
     char     fmtbuf[512];
 
-    snprintf(fmtbuf, sizeof(fmtbuf), "%s%s: %s\n",
-             input.accept ? "\n" : "", exe_name, fmt);
+    if (config.verbose) {
+        snprintf(fmtbuf, sizeof(fmtbuf), "%s%s: %s\n",
+                 input.accept ? "\n" : "", exe_name, fmt);
+    }
+    else {
+        snprintf(fmtbuf, sizeof(fmtbuf), "%s%s\n",
+                 input.accept ? "\n" : "", fmt);
+    }
 
     va_start(ap, fmt);
     vprintf(fmtbuf, ap);
@@ -536,13 +564,14 @@ static void print_message(char *fmt, ...)
 
 static void usage(int exit_code)
 {
-    printf("usage: %s [-h] [-t] "
+    printf("usage: %s [-h] [-t] [-v]"
            "[-o optional-resources] [-s shared-resources] "
            "class all-resources\n",
            exe_name);
     printf("\toptions:\n");
     printf("\t  h\tprint this help message and exit\n");
     printf("\t  t\ttrace messages\n");
+    printf("\t  v\tverbose printouts\n");
     printf("\t  o\toptional resources. See 'resources' below for the "
            "syntax of\n\t\t<optional resources>\n");
     printf("\t  s\tshared resources. See 'resources' below for the "
@@ -573,12 +602,13 @@ static void parse_options(int argc, char **argv)
     config.trace = FALSE;
     config.id    = 1;
 
-    while ((option = getopt(argc, argv, "hto:s:")) != -1) {
+    while ((option = getopt(argc, argv, "htvo:s:")) != -1) {
 
         switch (option) {
             
         case 'h':   usage(0);                                            break;
         case 't':   config.trace      = TRUE;                            break;
+        case 'v':   config.verbose    = TRUE;                            break;
         case 'o':   config.rset.opt   = parse_resource_list(optarg, 1);  break;
         case 's':   config.rset.share = parse_resource_list(optarg, 1);  break;
         default:    usage(EINVAL);                                       break;
@@ -604,11 +634,15 @@ static void parse_options(int argc, char **argv)
 
 static char *parse_class_string(char *str)
 {
-    if (strcmp(str, "call"    ) &&
-        strcmp(str, "ringtone") &&
-        strcmp(str, "alarm"   ) &&
-        strcmp(str, "media"   ) &&
-        strcmp(str, "default" )    )
+    if (strcmp(str, "call"      ) &&
+        strcmp(str, "camera"    ) &&
+        strcmp(str, "ringtone"  ) &&
+        strcmp(str, "alarm"     ) &&
+        strcmp(str, "navigator" ) &&
+        strcmp(str, "game"      ) &&
+        strcmp(str, "player"    ) &&
+        strcmp(str, "event"     ) &&
+        strcmp(str, "background")   )
    {
        print_error("invalid class '%s'", str);
    }
