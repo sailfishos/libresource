@@ -3,9 +3,9 @@
 
 #include <res-set.h>
 
-resset_t *resset_create(union resconn_u*, const char*,
-                        uint32_t, resset_state_t, const char *,
-                        uint32_t, uint32_t, uint32_t);
+resset_t *resset_create(union resconn_u*, const char*, uint32_t,
+                        resset_state_t, const char *, uint32_t,
+                        uint32_t, uint32_t, uint32_t, uint32_t);
 void      resset_destroy(resset_t *);
 void      resset_ref(resset_t *);
 void      resset_unref(resset_t *);

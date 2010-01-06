@@ -25,10 +25,12 @@ typedef struct resset_s {
     uint32_t          id;
     resset_state_t    state;
     char             *class;
+    uint32_t          mode;
     struct {
         uint32_t all;
-        uint32_t share;
         uint32_t opt;
+        uint32_t share;
+        uint32_t mask;
     }                 flags;
     void             *userdata;
 } resset_t;

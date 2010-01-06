@@ -11,9 +11,11 @@ resset_t *resset_create(resconn_t     *rcon,
                         uint32_t       id,
                         resset_state_t state,
                         const char    *class,
+                        uint32_t       mode,
                         uint32_t       all,
+                        uint32_t       opt,
                         uint32_t       share,
-                        uint32_t       opt)
+                        uint32_t       mask)
 {
     resset_t *rset;
 
@@ -27,9 +29,11 @@ resset_t *resset_create(resconn_t     *rcon,
         rset->id          = id;
         rset->state       = state;
         rset->class       = strdup(class);
+        rset->mode        = mode,
         rset->flags.all   = all;
-        rset->flags.share = share;
         rset->flags.opt   = opt;
+        rset->flags.share = share;
+        rset->flags.mask  = mask;
 
         rcon->any.rsets  = rset;
     }

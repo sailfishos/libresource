@@ -11,6 +11,7 @@
 
 #include <glib.h>
 #include <dbus/dbus.h>
+#include <dbus/dbus-glib-lowlevel.h>
 
 #include <res-conn.h>
 
@@ -24,6 +25,7 @@ typedef struct {
     int             trace;
     uint32_t        id;
     char           *class;
+    uint32_t        mode;
     resmsg_rset_t   rset;
     int             verbose;
 } conf_t;
@@ -32,6 +34,11 @@ typedef struct {
     uint32_t        value;
     const char     *name;
 } rdef_t;
+
+typedef struct {
+    uint32_t        value;
+    const char     *name;
+} mdef_t;
 
 typedef struct {
     GIOChannel     *chan;
@@ -72,6 +79,7 @@ static void     usage(int);
 static void     parse_options(int, char **);
 static char    *parse_class_string(char *);
 static uint32_t parse_resource_list(char *, int);
+static uint32_t parse_mode_values(char *, int);
 
 
 static char            *exe_name = "";
@@ -232,7 +240,7 @@ static void parse_input(void)
     char     *str = input.buf;
     char     *p;
     char     *rs;
-    uint32_t  res[3];
+    uint32_t  res[4];
     int       i;
     resmsg_t  msg;
 
@@ -257,7 +265,7 @@ static void parse_input(void)
     else if (!strncmp(str, "update", 6)) {
         rs = str = skip_whitespaces(str + 6);
   
-        for (i = 0;  i < 3; i++) {
+        for (i = 0;  i < 4; i++) {
             if ((p = strchr(str, ':')) != NULL)
                 *p = '\0';
             
@@ -281,8 +289,9 @@ static void parse_input(void)
             memset(&msg, 0, sizeof(resmsg_t));
             msg.record.type       = RESMSG_UPDATE;
             msg.record.rset.all   = res[0];
-            msg.record.rset.share = res[1];
-            msg.record.rset.opt   = res[2];
+            msg.record.rset.opt   = res[1];
+            msg.record.rset.share = res[2];
+            msg.record.rset.mask  = res[3];
             msg.record.class      = config.class;
             manager_send_message(&msg);
         }
@@ -413,9 +422,11 @@ static void connect_to_manager(resconn_t *rc)
     resmsg.record.id         = config.id;
     resmsg.record.reqno      = ++reqno;
     resmsg.record.rset.all   = config.rset.all;
-    resmsg.record.rset.share = config.rset.share;
     resmsg.record.rset.opt   = config.rset.opt;
+    resmsg.record.rset.share = config.rset.share;
+    resmsg.record.rset.mask  = config.rset.mask;
     resmsg.record.class      = config.class;
+    resmsg.record.mode       = config.mode;
 
     rset = resconn_connect(rc, &resmsg, manager_status);
 
@@ -564,18 +575,22 @@ static void print_message(char *fmt, ...)
 
 static void usage(int exit_code)
 {
-    printf("usage: %s [-h] [-t] [-v]"
-           "[-o optional-resources] [-s shared-resources] "
+    printf("usage: %s [-h] [-t] [-v] [-f mode-values]"
+           "[-o optional-resources] [-s shared-resources -m shared-mask] "
            "class all-resources\n",
            exe_name);
     printf("\toptions:\n");
     printf("\t  h\tprint this help message and exit\n");
     printf("\t  t\ttrace messages\n");
     printf("\t  v\tverbose printouts\n");
+    printf("\t  f\tmode values. See 'modes' below for the "
+           "\n\t\tsyntax of <mode-values>\n");
     printf("\t  o\toptional resources. See 'resources' below for the "
-           "syntax of\n\t\t<optional resources>\n");
+           "syntax of\n\t\t<optional-resources>\n");
     printf("\t  s\tshared resources. See 'resources' below for the "
-           "syntax of\n\t\t<shared resources>\n");
+           "syntax of\n\t\t<shared-resources>\n");
+    printf("\t  m\tshared resource mask. See 'resources' below for the "
+           "syntax of\n\t\t<shared-mask>\n");
     printf("\tclass:\n");
     printf("\t\tcall\t- for native or 3rd party telephony\n");
     printf("\t\tringtone - for ringtones\n");
@@ -589,6 +604,9 @@ static void usage(int exit_code)
     printf("\t\tAudioRecording\n");
     printf("\t\tVideoRecording\n");
     printf("\t  no whitespace allowed in the resource list.\n");
+    printf("\tmodes:\n");
+    printf("\t  comma separated lis of the following modes\n");
+    printf("\t\tAutoRelease\n");
 
     exit(exit_code);
 }
@@ -602,15 +620,17 @@ static void parse_options(int argc, char **argv)
     config.trace = FALSE;
     config.id    = 1;
 
-    while ((option = getopt(argc, argv, "htvo:s:")) != -1) {
+    while ((option = getopt(argc, argv, "htvf:s:o:m:")) != -1) {
 
         switch (option) {
             
         case 'h':   usage(0);                                            break;
         case 't':   config.trace      = TRUE;                            break;
         case 'v':   config.verbose    = TRUE;                            break;
+        case 'f':   config.mode       = parse_mode_values(optarg, 1);    break;
         case 'o':   config.rset.opt   = parse_resource_list(optarg, 1);  break;
         case 's':   config.rset.share = parse_resource_list(optarg, 1);  break;
+        case 'm':   config.rset.mask  = parse_resource_list(optarg, 1);  break;
         default:    usage(EINVAL);                                       break;
         
         }
@@ -627,8 +647,12 @@ static void parse_options(int argc, char **argv)
         print_error("optonal resources are not subset of all resources");
     }
 
-    if ((config.rset.all | config.rset.share) != config.rset.all) {
-        print_error("shared resources are not subset of all resources ");
+    if ((config.rset.all | config.rset.mask) != config.rset.all) {
+        print_error("shared resource mask is not subset of all resources ");
+    }
+
+    if ((config.rset.mask | config.rset.share) != config.rset.mask) {
+        print_error("shared resource values are not subset of shared mask ");
     }
 }
 
@@ -650,7 +674,7 @@ static char *parse_class_string(char *str)
     return str;
 }
 
-uint32_t parse_resource_list(char *rlist_str, int exit_if_error)
+static uint32_t parse_resource_list(char *rlist_str, int exit_if_error)
 {
     static rdef_t  rdef[] = {
         { RESMSG_AUDIO_PLAYBACK ,  "AudioPlayback"  },
@@ -698,6 +722,53 @@ uint32_t parse_resource_list(char *rlist_str, int exit_if_error)
         exit(EINVAL);
 
     return rlist;
+}
+
+static uint32_t parse_mode_values(char *mval_str, int exit_if_error)
+{
+    static rdef_t  mdef[] = {
+        { RESMSG_MODE_AUTO_RELEASE ,  "AutoRelease"  },
+        {             0            ,       NULL      }
+    };
+
+    uint32_t  mode = 0;
+    char      buf[256];
+    rdef_t   *md;
+    char     *p;
+    char     *e;
+
+    if (mval_str == NULL)
+        print_message("missing mode values");
+    else {
+        strncpy(buf, mval_str, sizeof(buf));
+        buf[sizeof(buf)-1] = '\0';
+
+        p = buf;
+
+        do {
+            if ((e = strchr(p, ',')) != NULL)
+                *e++ = '\0';
+
+            for (md = mdef;  md->name != NULL;  md++) {
+                if (!strcmp(p, md->name))
+                    break;
+            }
+
+            if (!md->value) {
+                print_message("invalid resource values '%s'", mval_str);
+                mode = 0;
+                break;
+            }
+
+            mode |= md->value;
+
+        } while((p = e) != NULL);
+    }
+
+    if (!mode && exit_if_error)
+        exit(EINVAL);
+
+    return mode;
 }
 
 /*

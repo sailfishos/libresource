@@ -15,6 +15,8 @@ extern "C" {
 #define RESMSG_AUDIO_RECORDING     RESMSG_BIT(2)
 #define RESMSG_VIDEO_RECORDING     RESMSG_BIT(3)
 
+#define RESMSG_MODE_AUTO_RELEASE   RESMSG_BIT(0)
+
 
 typedef enum {
     RESMSG_INVALID = -1,
@@ -35,14 +37,15 @@ typedef enum {
 
 typedef struct {
     uint32_t          all;       /* all the resources */
-    uint32_t          share;     /* shareable resources (subset of all) */
     uint32_t          opt;       /* optional resources (subset of all) */
+    uint32_t          share;     /* shareable resource value */
+    uint32_t          mask;      /* shereable resource mask (subset of all) */
 } resmsg_rset_t;
 
 #define RESMSG_COMMON                                         \
     resmsg_type_t     type;      /* RESMSG_xxxx            */ \
     uint32_t          id;        /* resourse set ID        */ \
-    uint32_t          reqno      /* request number, if any */ \
+    uint32_t          reqno      /* request number, if any */
 
 typedef struct {
     RESMSG_COMMON;
@@ -52,6 +55,7 @@ typedef struct {
     RESMSG_COMMON;               /* RESMSG_[REGISTER|UPDATE] */
     resmsg_rset_t     rset;      /* resource set */
     char             *class;     /* optional application class */
+    uint32_t          mode;      /* or'ed RESMSG_MODE_xxxx values */
 } resmsg_record_t;
 
 typedef struct {
@@ -83,6 +87,7 @@ typedef union resmsg_u {
 char *resmsg_dump_message(resmsg_t *, int, char *, int);
 char *resmsg_type_str(resmsg_type_t);
 char *resmsg_res_str(uint32_t, char *, int);
+char *resmsg_mod_str(uint32_t, char *, int);
 
 
 #ifdef	__cplusplus

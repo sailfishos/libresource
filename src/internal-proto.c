@@ -91,11 +91,13 @@ static resset_t *connect_to_manager(resconn_t *rcon, resmsg_t *resmsg)
     uint32_t       id    =  resmsg->any.id;
     resmsg_rset_t *flags = &resmsg->record.rset;
     const char    *class =  resmsg->record.class;
+    uint32_t       mode  =  resmsg->record.mode;
     resset_t      *rset;
 
     if ((rset = resset_find(rcon, name, id)) == NULL)
         rset = resset_create(rcon, name, id, RESPROTO_RSET_STATE_CREATED,
-                             class, flags->all, flags->share, flags->opt);
+                             class, mode, flags->all, flags->opt,
+                             flags->share, flags->mask);
 
     return rset;
 }
@@ -285,6 +287,7 @@ static void receive_message_init(resconn_internal_t *rcon,
     resconn_qitem_t *item;
     resmsg_rset_t   *flags;
     const char      *class;
+    uint32_t         mode;
     
 
 
@@ -293,12 +296,14 @@ static void receive_message_init(resconn_internal_t *rcon,
 
     if (msg->type == RESMSG_REGISTER) {
         class =  msg->record.class;
+        mode  =  msg->record.mode;
         flags = &msg->record.rset;
 
         if ((resset_find((resconn_t *)rcon, peer, msg->any.id)) == NULL) {
             resset_create((resconn_t *)rcon, peer, msg->any.id,
                           RESPROTO_RSET_STATE_CONNECTED,
-                          class, flags->all, flags->share, flags->opt);
+                          class, mode, flags->all, flags->opt,
+                          flags->share, flags->mask);
         }
     }
 
