@@ -666,7 +666,8 @@ static char *method_name(resmsg_type_t msg_type)
         [ RESMSG_ACQUIRE    ] = RESPROTO_DBUS_ACQUIRE_METHOD,
         [ RESMSG_RELEASE    ] = RESPROTO_DBUS_RELEASE_METHOD,
         [ RESMSG_GRANT      ] = RESPROTO_DBUS_GRANT_METHOD,
-        [ RESMSG_ADVICE     ] = RESPROTO_DBUS_ADVICE_METHOD
+        [ RESMSG_ADVICE     ] = RESPROTO_DBUS_ADVICE_METHOD,
+        [ RESMSG_AUDIO      ] = RESPROTO_DBUS_AUDIO_METHOD
     };
 
     char *retval = NULL;

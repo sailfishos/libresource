@@ -10,13 +10,15 @@ DBusMessage *resmsg_dbus_compose_message(const char *dest,
                                          const char *method,
                                          resmsg_t   *resmsg)
 {
-    static char      *empty_str = "";
+    static char       *empty_str = "";
 
-    DBusMessage      *dbusmsg = NULL;
-    resmsg_record_t  *record;
-    resmsg_possess_t *possess;
-    resmsg_notify_t  *notify;
-    int               success;
+    DBusMessage       *dbusmsg = NULL;
+    resmsg_record_t   *record;
+    resmsg_possess_t  *possess;
+    resmsg_notify_t   *notify;
+    resmsg_audio_t    *audio;
+    resmsg_property_t *property;
+    int                success;
 
     if (!dest || !path || !interface || !method || !resmsg)
         goto compose_error;
@@ -70,6 +72,22 @@ DBusMessage *resmsg_dbus_compose_message(const char *dest,
                                            DBUS_TYPE_UINT32, &notify->resrc,
                                            DBUS_TYPE_INVALID);
         break;
+
+    case RESMSG_AUDIO:
+        audio    = &resmsg->audio;
+        property = &audio->property;
+        success  = dbus_message_append_args(dbusmsg,
+                       DBUS_TYPE_INT32 , &audio->type,
+                       DBUS_TYPE_UINT32, &audio->id,
+                       DBUS_TYPE_UINT32, &audio->reqno,
+                       DBUS_TYPE_UINT32, &audio->pid,
+                       DBUS_TYPE_STRING,  property->name ?
+                                         &property->name : &empty_str,
+                       DBUS_TYPE_INT32 , &property->match.method,
+                       DBUS_TYPE_STRING,  property->match.pattern ?
+                                         &property->match.pattern : &empty_str,
+                      DBUS_TYPE_INVALID);
+        break;
     }
 
     if (!success)
@@ -116,13 +134,16 @@ DBusMessage *resmsg_dbus_reply_message(DBusMessage *dbusmsg,resmsg_t *resreply)
 
 resmsg_t *resmsg_dbus_parse_message(DBusMessage *dbusmsg, resmsg_t *resmsg)
 {
-    int32_t           type;
-    resmsg_record_t  *record;
-    resmsg_possess_t *possess;
-    resmsg_notify_t  *notify;
-    resmsg_status_t  *status;
-    int               free_resmsg;
-    int               success;
+    int32_t            type;
+    resmsg_record_t   *record;
+    resmsg_possess_t  *possess;
+    resmsg_notify_t   *notify;
+    resmsg_audio_t    *audio;
+    resmsg_status_t   *status;
+    resmsg_property_t *property;
+    resmsg_match_t    *match;
+    int                free_resmsg;
+    int                success;
     
     if (dbusmsg == NULL) {
         free_resmsg = FALSE;
@@ -201,6 +222,21 @@ resmsg_t *resmsg_dbus_parse_message(DBusMessage *dbusmsg, resmsg_t *resmsg)
                                         DBUS_TYPE_UINT32, &notify->id,
                                         DBUS_TYPE_UINT32, &notify->reqno,
                                         DBUS_TYPE_UINT32, &notify->resrc,
+                                        DBUS_TYPE_INVALID);
+        break;
+
+    case RESMSG_AUDIO:
+        audio    = &resmsg->audio;
+        property = &audio->property;
+        match    = &property->match;
+        success = dbus_message_get_args(dbusmsg, NULL,
+                                        DBUS_TYPE_INT32 , &audio->type,
+                                        DBUS_TYPE_UINT32, &audio->id,
+                                        DBUS_TYPE_UINT32, &audio->reqno,
+                                        DBUS_TYPE_UINT32, &audio->pid,
+                                        DBUS_TYPE_STRING, &property->name,
+                                        DBUS_TYPE_INT32 , &match->method,
+                                        DBUS_TYPE_STRING, &match->pattern,
                                         DBUS_TYPE_INVALID);
         break;
 

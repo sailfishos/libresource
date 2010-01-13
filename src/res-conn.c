@@ -21,6 +21,7 @@ static int manager_valid_message[RESMSG_MAX] = {
     [RESMSG_RELEASE   ] = VALID   ,
     [RESMSG_GRANT     ] = INVALID ,
     [RESMSG_ADVICE    ] = INVALID ,
+    [RESMSG_AUDIO     ] = VALID   ,
 };
 static int client_valid_message[RESMSG_MAX] = {
     [RESMSG_REGISTER  ] = INVALID ,
@@ -30,6 +31,7 @@ static int client_valid_message[RESMSG_MAX] = {
     [RESMSG_RELEASE   ] = INVALID ,
     [RESMSG_GRANT     ] = VALID   ,
     [RESMSG_ADVICE    ] = VALID   ,
+    [RESMSG_AUDIO     ] = INVALID ,
 };
 
 #undef INVALID

@@ -29,11 +29,14 @@ EXPORT char *resmsg_dump_message(resmsg_t *resmsg,
     char *p;
     char  r[512];
     char  m[512];
-    resmsg_rset_t    *rset;
-    resmsg_record_t  *record;
-    resmsg_possess_t *possess;
-    resmsg_notify_t  *notify;
-    resmsg_status_t  *status;
+    resmsg_rset_t     *rset;
+    resmsg_record_t   *record;
+    resmsg_possess_t  *possess;
+    resmsg_notify_t   *notify;
+    resmsg_audio_t    *audio;
+    resmsg_status_t   *status;
+    resmsg_property_t *property;
+    resmsg_match_t    *match;
 
     if (!buf || len < 1 || indent < 0)
         return "";
@@ -43,9 +46,9 @@ EXPORT char *resmsg_dump_message(resmsg_t *resmsg,
     memset(spaces, ' ', sizeof(spaces));
     spaces[indent < sizeof(spaces) ? indent : sizeof(spaces)-1] = '\0';
 
-    PRINT("type      : %s (%d)",  resmsg_type_str(resmsg->type), resmsg->type);
-    PRINT("id        : %u"     ,  resmsg->any.id);
-    PRINT("reqno     : %u"     ,  resmsg->any.reqno);
+    PRINT("type       : %s (%d)",  resmsg_type_str(resmsg->type),resmsg->type);
+    PRINT("id         : %u"     ,  resmsg->any.id);
+    PRINT("reqno      : %u"     ,  resmsg->any.reqno);
 
     switch (resmsg->type) {
 
@@ -53,13 +56,13 @@ EXPORT char *resmsg_dump_message(resmsg_t *resmsg,
     case RESMSG_UPDATE:
         record = &resmsg->record;
         rset   = &record->rset;
-        PRINT("rset.all  : %s"  , resmsg_res_str(rset->all  ,  r, sizeof(r)));
-        PRINT("rset.opt  : %s"  , resmsg_res_str(rset->opt  ,  r, sizeof(r)));
-        PRINT("rset.share: %s"  , resmsg_res_str(rset->share,  r, sizeof(r)));
-        PRINT("rset.mask : %s"  , resmsg_res_str(rset->mask ,  r, sizeof(r)));
-        PRINT("class     : '%s'", record->class && record->class[0] ?
-                                         record->class : "<unknown>");
-        PRINT("mode      : %s"  , resmsg_mod_str(record->mode, m, sizeof(m)));
+        PRINT("rset.all   : %s"  , resmsg_res_str(rset->all  ,  r, sizeof(r)));
+        PRINT("rset.opt   : %s"  , resmsg_res_str(rset->opt  ,  r, sizeof(r)));
+        PRINT("rset.share : %s"  , resmsg_res_str(rset->share,  r, sizeof(r)));
+        PRINT("rset.mask  : %s"  , resmsg_res_str(rset->mask ,  r, sizeof(r)));
+        PRINT("class      : '%s'", record->class && record->class[0] ?
+                                        record->class : "<unknown>");
+        PRINT("mode       : %s"  , resmsg_mod_str(record->mode, m, sizeof(m)));
         break;
 
     case RESMSG_UNREGISTER:
@@ -71,7 +74,19 @@ EXPORT char *resmsg_dump_message(resmsg_t *resmsg,
     case RESMSG_GRANT:
     case RESMSG_ADVICE:
         notify = &resmsg->notify;
-        PRINT("resrc     : %s", resmsg_res_str(notify->resrc, r, sizeof(r)));
+        PRINT("resrc      : %s", resmsg_res_str(notify->resrc, r, sizeof(r)));
+        break;
+
+    case RESMSG_AUDIO:
+        audio    = &resmsg->audio;
+        property = &audio->property;
+        match    = &property->match;
+        PRINT("pid        : %u", audio->pid);
+        PRINT("property   :");
+        PRINT("  name     : '%s'", property->name);
+        PRINT("  match    :");
+        PRINT("    method : %s", resmsg_match_method_str(match->method));
+        PRINT("    pattern: '%s'", match->pattern);
         break;
 
     case RESMSG_STATUS:
@@ -105,6 +120,7 @@ EXPORT char *resmsg_type_str(resmsg_type_t type)
     case RESMSG_RELEASE:       str = "releaase";         break;
     case RESMSG_GRANT:         str = "grant";            break;
     case RESMSG_ADVICE:        str = "advice";           break;
+    case RESMSG_AUDIO:         str = "audio";            break;
     case RESMSG_STATUS:        str = "status";           break;
     default:                   str = "<unknown type>";   break;
     }
@@ -190,6 +206,20 @@ EXPORT char *resmsg_res_str(uint32_t res, char *buf, int len)
         snprintf(p, len, "%s(%s)", *s ? " ":"<no-resource> ", hex);
 
     return buf;
+}
+
+EXPORT char *resmsg_match_method_str(resmsg_match_method_t method)
+{
+    char *str;
+
+    switch (method) {
+    case resmsg_method_equals:      str = "equals";      break;
+    case resmsg_method_startswith:  str = "startswith";  break;
+    case resmsg_method_matches:     str = "matches";     break;
+    default:                        str = "<unknown>";   break;
+    }
+
+    return str;
 }
 
 static char *flag_str(uint32_t flag)

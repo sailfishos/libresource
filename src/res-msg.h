@@ -18,7 +18,7 @@ extern "C" {
 #define RESMSG_MODE_AUTO_RELEASE   RESMSG_BIT(0)
 
 
-typedef enum {
+typedef enum resmsg_type_e {
     RESMSG_INVALID = -1,
 
     RESMSG_REGISTER,
@@ -28,6 +28,7 @@ typedef enum {
     RESMSG_RELEASE,
     RESMSG_GRANT,
     RESMSG_ADVICE,
+    RESMSG_AUDIO,
 
     RESMSG_MAX,
 
@@ -41,6 +42,22 @@ typedef struct {
     uint32_t          share;     /* shareable resource value */
     uint32_t          mask;      /* shereable resource mask (subset of all) */
 } resmsg_rset_t;
+
+typedef enum {
+    resmsg_method_equals = 0,
+    resmsg_method_startswith,
+    resmsg_method_matches
+} resmsg_match_method_t;
+
+typedef struct {
+    resmsg_match_method_t  method;
+    char                  *pattern;
+} resmsg_match_t;
+
+typedef struct {
+    char             *name;
+    resmsg_match_t    match;
+} resmsg_property_t;
 
 #define RESMSG_COMMON                                         \
     resmsg_type_t     type;      /* RESMSG_xxxx            */ \
@@ -68,6 +85,12 @@ typedef struct {
 } resmsg_notify_t;
 
 typedef struct {
+    RESMSG_COMMON;               /* RESMSG_AUDIO */
+    uint32_t          pid;       /* PID of the streaming app, if any */
+    resmsg_property_t property;  /* audio stream property */
+} resmsg_audio_t;
+
+typedef struct {
     RESMSG_COMMON;               /* RESMSG_STATUS */
     int32_t           errcod;    /* error code, if any */
     const char       *errmsg;    /* error message, if any */
@@ -80,6 +103,7 @@ typedef union resmsg_u {
     resmsg_record_t   record;
     resmsg_possess_t  possess;
     resmsg_notify_t   notify;
+    resmsg_audio_t    audio;
     resmsg_status_t   status;
 } resmsg_t;
 
@@ -88,6 +112,7 @@ char *resmsg_dump_message(resmsg_t *, int, char *, int);
 char *resmsg_type_str(resmsg_type_t);
 char *resmsg_res_str(uint32_t, char *, int);
 char *resmsg_mod_str(uint32_t, char *, int);
+char *resmsg_match_method_str(resmsg_match_method_t);
 
 
 #ifdef	__cplusplus
