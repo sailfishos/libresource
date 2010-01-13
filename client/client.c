@@ -241,6 +241,9 @@ static void parse_input(void)
     char     *p;
     char     *rs;
     uint32_t  res[4];
+    uint32_t  pid;
+    char     *name;
+    char     *value;
     int       i;
     resmsg_t  msg;
 
@@ -296,6 +299,33 @@ static void parse_input(void)
             manager_send_message(&msg);
         }
     }
+    else if (!strncmp(str, "audio", 5)) {
+        p = skip_whitespaces(str + 5);
+
+        if ((pid = strtoul(p, &p, 10)) != 0 && (*p == ' ' || *p == '\t')) {
+            name = skip_whitespaces(p);
+            if ((p = strchr(name, ':')) == NULL)
+                print_message("invalid property specification: '%s'", name);
+            else {
+                *p++ = '\0';
+                value = p;
+                str = strchrnul(value, ' ');
+                *str = '\0';
+                
+                memset(&msg, 0, sizeof(resmsg_t));
+                msg.audio.type = RESMSG_AUDIO;
+                msg.audio.pid  = pid;
+                msg.audio.property.name = name;
+                msg.audio.property.match.method  = resmsg_method_equals;
+                msg.audio.property.match.pattern = value; 
+
+                manager_send_message(&msg);
+            }
+        }
+        else {
+            print_message("invalid pid");
+        }
+    } 
     else {
         print_message("invalid input '%s'", input.buf);
         return;
@@ -592,11 +622,15 @@ static void usage(int exit_code)
     printf("\t  m\tshared resource mask. See 'resources' below for the "
            "syntax of\n\t\t<shared-mask>\n");
     printf("\tclass:\n");
-    printf("\t\tcall\t- for native or 3rd party telephony\n");
-    printf("\t\tringtone - for ringtones\n");
-    printf("\t\talarm\t - for alarm clock\n");
-    printf("\t\tmedia\t - for media playback/recording\n");
-    printf("\t\tdefault\t - for nonidentified applications\n");
+    printf("\t\tcall\t  - for native or 3rd party telephony\n");
+    printf("\t\tcamera\t  - for photo applications\n");
+    printf("\t\tringtone  - for ringtones\n");
+    printf("\t\talarm\t  - for alarm clock\n");
+    printf("\t\tnavigator - for mapping applications\n");
+    printf("\t\tgame\t  - for gaming\n");
+    printf("\t\tplayer\t  - for media playback/recording\n");
+    printf("\t\tevent\t  - for messaging and other event notifications\n");
+    printf("\t\tbackground - for thumbnailing etc\n");
     printf("\tresources:\n");
     printf("\t  comma separated list of the following resources\n");
     printf("\t\tAudioPlayback\n");
