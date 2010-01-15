@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <ctype.h>
 #include <fcntl.h>
 #include <getopt.h>
 #include <libgen.h>
@@ -241,6 +242,7 @@ static void parse_input(void)
     char     *p;
     char     *rs;
     uint32_t  res[4];
+    char     *audiogr;
     uint32_t  pid;
     char     *name;
     char     *value;
@@ -302,29 +304,46 @@ static void parse_input(void)
     else if (!strncmp(str, "audio", 5)) {
         p = skip_whitespaces(str + 5);
 
-        if ((pid = strtoul(p, &p, 10)) != 0 && (*p == ' ' || *p == '\t')) {
-            name = skip_whitespaces(p);
-            if ((p = strchr(name, ':')) == NULL)
-                print_message("invalid property specification: '%s'", name);
-            else {
-                *p++ = '\0';
-                value = p;
-                str = strchrnul(value, ' ');
-                *str = '\0';
-                
-                memset(&msg, 0, sizeof(resmsg_t));
-                msg.audio.type = RESMSG_AUDIO;
-                msg.audio.pid  = pid;
-                msg.audio.property.name = name;
-                msg.audio.property.match.method  = resmsg_method_equals;
-                msg.audio.property.match.pattern = value; 
-
-                manager_send_message(&msg);
+        do { 
+            if (!isalpha(p[0])) {
+                print_message("invalid audio group");
+                break;
             }
-        }
-        else {
-            print_message("invalid pid");
-        }
+            for (audiogr = p; *p;  p++) {
+                if (*p == ' ' || *p == '\t') {
+                    *p++ = '\0';
+                    p = skip_whitespaces(p);
+                    break;
+                }
+            }
+
+            if (!(pid = strtoul(p, &p, 10)) || (*p != ' ' && *p != '\t')) {
+                print_message("invalid pid");
+                break;
+            }
+
+            name = skip_whitespaces(p);
+
+            if ((p = strchr(name, ':')) == NULL) {
+                print_message("invalid property specification: '%s'", name);
+                break;
+            }
+
+            *p++ = '\0';
+            value = p;
+            str = strchrnul(value, ' ');
+            *str = '\0';
+            
+            memset(&msg, 0, sizeof(resmsg_t));
+            msg.audio.type  = RESMSG_AUDIO;
+            msg.audio.group = audiogr;
+            msg.audio.pid   = pid;
+            msg.audio.property.name = name;
+            msg.audio.property.match.method  = resmsg_method_equals;
+            msg.audio.property.match.pattern = value; 
+            
+            manager_send_message(&msg);
+        } while (0);
     } 
     else {
         print_message("invalid input '%s'", input.buf);

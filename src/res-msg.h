@@ -86,6 +86,7 @@ typedef struct {
 
 typedef struct {
     RESMSG_COMMON;               /* RESMSG_AUDIO */
+    char             *group;     /* group, if any ('' => registered class) */
     uint32_t          pid;       /* PID of the streaming app, if any */
     resmsg_property_t property;  /* audio stream property */
 } resmsg_audio_t;

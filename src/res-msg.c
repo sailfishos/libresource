@@ -81,11 +81,12 @@ EXPORT char *resmsg_dump_message(resmsg_t *resmsg,
         audio    = &resmsg->audio;
         property = &audio->property;
         match    = &property->match;
-        PRINT("pid        : %u", audio->pid);
+        PRINT("group      : '%s'", audio->group);
+        PRINT("pid        : %u"  , audio->pid);
         PRINT("property   :");
         PRINT("  name     : '%s'", property->name);
         PRINT("  match    :");
-        PRINT("    method : %s", resmsg_match_method_str(match->method));
+        PRINT("    method : %s"  , resmsg_match_method_str(match->method));
         PRINT("    pattern: '%s'", match->pattern);
         break;
 

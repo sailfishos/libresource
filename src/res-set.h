@@ -10,7 +10,6 @@ extern "C" {
 
 
 union resconn_u;
-union resspec_u;
 
 typedef enum {
     RESPROTO_RSET_STATE_CREATED = 0,
@@ -33,7 +32,6 @@ typedef struct resset_s {
         uint32_t share;
         uint32_t mask;
     }                 flags;
-    union resspec    *specs;
     void             *userdata;
 } resset_t;
 

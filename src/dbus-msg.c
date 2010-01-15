@@ -80,6 +80,8 @@ DBusMessage *resmsg_dbus_compose_message(const char *dest,
                        DBUS_TYPE_INT32 , &audio->type,
                        DBUS_TYPE_UINT32, &audio->id,
                        DBUS_TYPE_UINT32, &audio->reqno,
+                       DBUS_TYPE_STRING,  audio->group ?
+                                         &audio->group : &empty_str,
                        DBUS_TYPE_UINT32, &audio->pid,
                        DBUS_TYPE_STRING,  property->name ?
                                          &property->name : &empty_str,
@@ -233,6 +235,7 @@ resmsg_t *resmsg_dbus_parse_message(DBusMessage *dbusmsg, resmsg_t *resmsg)
                                         DBUS_TYPE_INT32 , &audio->type,
                                         DBUS_TYPE_UINT32, &audio->id,
                                         DBUS_TYPE_UINT32, &audio->reqno,
+                                        DBUS_TYPE_STRING, &audio->group,
                                         DBUS_TYPE_UINT32, &audio->pid,
                                         DBUS_TYPE_STRING, &property->name,
                                         DBUS_TYPE_INT32 , &match->method,
