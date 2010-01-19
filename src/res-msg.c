@@ -245,6 +245,7 @@ static char *mode_str(uint32_t mode_bit)
 
     switch (mode_bit) {
     case RESMSG_MODE_AUTO_RELEASE:  str = "AutoRelease";   break;
+    case RESMSG_MODE_ALWAYS_REPLY:  str = "AlwaysReply";   break;
     default:                        str = NULL;            break;
     }
 

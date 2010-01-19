@@ -16,7 +16,7 @@ extern "C" {
 #define RESMSG_VIDEO_RECORDING     RESMSG_BIT(3)
 
 #define RESMSG_MODE_AUTO_RELEASE   RESMSG_BIT(0)
-
+#define RESMSG_MODE_ALWAYS_REPLY   RESMSG_BIT(1)
 
 typedef enum resmsg_type_e {
     RESMSG_INVALID = -1,
