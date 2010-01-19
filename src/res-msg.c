@@ -60,8 +60,8 @@ EXPORT char *resmsg_dump_message(resmsg_t *resmsg,
         PRINT("rset.opt   : %s"  , resmsg_res_str(rset->opt  ,  r, sizeof(r)));
         PRINT("rset.share : %s"  , resmsg_res_str(rset->share,  r, sizeof(r)));
         PRINT("rset.mask  : %s"  , resmsg_res_str(rset->mask ,  r, sizeof(r)));
-        PRINT("class      : '%s'", record->class && record->class[0] ?
-                                        record->class : "<unknown>");
+        PRINT("klass      : '%s'", record->klass && record->klass[0] ?
+                                        record->klass : "<unknown>");
         PRINT("mode       : %s"  , resmsg_mod_str(record->mode, m, sizeof(m)));
         break;
 

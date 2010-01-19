@@ -103,14 +103,14 @@ static resset_t *connect_to_manager(resconn_t *rcon, resmsg_t *resmsg)
     char          *name  =  RESPROTO_DBUS_MANAGER_NAME;
     uint32_t       id    =  resmsg->record.id;
     resmsg_rset_t *flags = &resmsg->record.rset;
-    const char    *class =  resmsg->record.class;
+    const char    *klass =  resmsg->record.klass;
     uint32_t       mode  =  resmsg->record.mode;
     resset_t      *rset;
 
     if ((rset = resset_find(rcon, name, id)) == NULL) {
         if (register_client_object(&rcon->dbus, id)) {
             rset = resset_create(rcon, name, id, RESPROTO_RSET_STATE_CREATED,
-                                 class, mode, flags->all, flags->opt,
+                                 klass, mode, flags->all, flags->opt,
                                  flags->share, flags->mask);
         }
     }
@@ -602,7 +602,7 @@ static DBusHandlerResult manager_method(DBusConnection *dcon,
             if (resmsg.type == RESMSG_REGISTER) {
                 rset = resset_create(rcon, sender, resmsg.any.id,
                                      RESPROTO_RSET_STATE_CONNECTED,
-                                     resmsg.record.class,
+                                     resmsg.record.klass,
                                      resmsg.record.mode,
                                      resmsg.record.rset.all,
                                      resmsg.record.rset.opt,

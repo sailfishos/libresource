@@ -25,7 +25,7 @@
 typedef struct {
     int             trace;
     uint32_t        id;
-    char           *class;
+    char           *klass;
     uint32_t        mode;
     resmsg_rset_t   rset;
     int             verbose;
@@ -297,7 +297,7 @@ static void parse_input(void)
             msg.record.rset.opt   = res[1];
             msg.record.rset.share = res[2];
             msg.record.rset.mask  = res[3];
-            msg.record.class      = config.class;
+            msg.record.klass      = config.klass;
             manager_send_message(&msg);
         }
     }
@@ -474,7 +474,7 @@ static void connect_to_manager(resconn_t *rc)
     resmsg.record.rset.opt   = config.rset.opt;
     resmsg.record.rset.share = config.rset.share;
     resmsg.record.rset.mask  = config.rset.mask;
-    resmsg.record.class      = config.class;
+    resmsg.record.klass      = config.klass;
     resmsg.record.mode       = config.mode;
 
     rset = resconn_connect(rc, &resmsg, manager_status);
@@ -692,7 +692,7 @@ static void parse_options(int argc, char **argv)
     if (optind != argc - 2)
         usage(EINVAL);
     else {
-        config.class    = parse_class_string(argv[optind]);
+        config.klass    = parse_class_string(argv[optind]);
         config.rset.all = parse_resource_list(argv[optind+1], 1);
     }
 

@@ -71,7 +71,7 @@ typedef struct {
 typedef struct {
     RESMSG_COMMON;               /* RESMSG_[REGISTER|UPDATE] */
     resmsg_rset_t     rset;      /* resource set */
-    char             *class;     /* optional application class */
+    char             *klass;     /* optional application class */
     uint32_t          mode;      /* or'ed RESMSG_MODE_xxxx values */
 } resmsg_record_t;
 

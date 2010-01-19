@@ -45,8 +45,8 @@ DBusMessage *resmsg_dbus_compose_message(const char *dest,
                                  DBUS_TYPE_UINT32, &record->rset.opt,
                                  DBUS_TYPE_UINT32, &record->rset.share,
                                  DBUS_TYPE_UINT32, &record->rset.mask,
-                                 DBUS_TYPE_STRING,  record->class ?
-                                                   &record->class : &empty_str,
+                                 DBUS_TYPE_STRING,  record->klass ?
+                                                   &record->klass : &empty_str,
                                  DBUS_TYPE_UINT32, &record->mode,
                                  DBUS_TYPE_INVALID);
         break;
@@ -199,7 +199,7 @@ resmsg_t *resmsg_dbus_parse_message(DBusMessage *dbusmsg, resmsg_t *resmsg)
                                         DBUS_TYPE_UINT32, &record->rset.opt,
                                         DBUS_TYPE_UINT32, &record->rset.share,
                                         DBUS_TYPE_UINT32, &record->rset.mask,
-                                        DBUS_TYPE_STRING, &record->class,
+                                        DBUS_TYPE_STRING, &record->klass,
                                         DBUS_TYPE_UINT32, &record->mode,
                                         DBUS_TYPE_INVALID);
         break;
