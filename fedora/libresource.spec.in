@@ -1,0 +1,66 @@
+%define _enable_debug_packages 0
+%define _unpackaged_files_terminate_build 0
+
+Summary: Libplayback replacement library.
+Name: libresource
+Version: ##__VERSION__##
+Release: 1
+License: Proprietary
+Group: Development/Libraries
+URL: http://127.0.0.1
+Source0: %{name}-%{version}.tar.gz
+BuildArch: ##__ARCH__##
+BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
+
+%package devel
+Summary: Libresource development files.
+Group: Development/Libraries
+Requires: libresource
+
+%package client
+Summary: Libresource test client
+Group: System/Utilities
+Requires: libresource
+
+%description
+libresource...
+
+%description devel
+libresource headers and pkg-config files...
+
+%description client
+
+%prep
+%setup -q -n ##__TARDIR__##
+
+%build
+export CFLAGS="-O0 -g3"
+%configure --disable-static
+make
+
+%install
+[ "$RPM_BUILD_ROOT" != "/" ] && rm -rf $RPM_BUILD_ROOT
+%makeinstall
+    
+
+%clean
+[ "$RPM_BUILD_ROOT" != "/" ] && rm -rf $RPM_BUILD_ROOT
+
+
+%files
+%defattr(-,root,root,-)
+%{_libdir}/libresource*.so*
+
+%files devel
+%defattr(-,root,root,-)
+%{_includedir}/resource*
+#%{_libdir}/resource*.a
+%{_libdir}/pkgconfig/libresource*.pc
+
+%files client
+%defattr(-,root,root,-)
+%{_bindir}/resource-client
+
+%changelog
+* Wed Apr 24 2008 Krisztian Litkey <krisztian.litkey@nokia.com> - 
+- Initial build.
