@@ -194,23 +194,19 @@ void resconn_reply_destroy(void *ptr)
     resconn_t       *rcon;
     resconn_reply_t *prev;
 
-    if (ptr != NULL) {
-        if ((rset  = reply->rset  ) != NULL &&
-            (rcon    = rset->resconn) != NULL    )
-        {
+    if (reply != NULL) {
+        if ((rset = reply->rset) != NULL && (rcon = rset->resconn) != NULL) {
             for (prev = (void *)&rcon->any.replies;
                  prev->next != NULL;
                  prev = prev->next)
             {
                 if (prev->next == reply) {
-                    prev->next  = reply->next;
-                    reply->next = NULL;
+                    prev->next = reply->next;
+                    free(reply);
                     break;
                 }
             }
         }
-
-        free(reply);
     }    
 }
 

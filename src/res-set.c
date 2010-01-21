@@ -62,10 +62,7 @@ void resset_unref(resset_t *rset)
 
     if (rset != NULL && --rset->refcnt <= 0) {
  
-       for (prev = (resset_t *)&rcon->rsets;
-            prev->next != NULL;
-            prev = prev->next)
-        {
+        for (prev = (resset_t *)&rcon->rsets;  prev->next;  prev = prev->next){
             if (prev->next == rset) {
                 prev->next = rset->next;
                 

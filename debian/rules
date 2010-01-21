@@ -10,7 +10,7 @@ GIT_VERSION := $(strip $(shell [ -x ./git-version.sh ] && \
 DEB_DH_GENCONTROL_ARGS += -u-VGit-Id=$(GIT_VERSION)
 
 
-CFLAGS = -Wall -g
+CFLAGS = -Wall -g3
 
 ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
 	CFLAGS += -O0

@@ -7,6 +7,8 @@
 resmsg_t *resmsg_internal_copy_message(resmsg_t *src)
 {
     resmsg_t *dst = NULL;
+    resmsg_property_t *src_prop, *dst_prop;
+    resmsg_match_t    *src_match, *dst_match;
 
     if (src != NULL && (dst = malloc(sizeof(resmsg_t))) != NULL) {
         memset(dst, 0, sizeof(resmsg_t));
@@ -30,6 +32,18 @@ resmsg_t *resmsg_internal_copy_message(resmsg_t *src)
             dst->notify = src->notify;
             break;
 
+        case RESMSG_AUDIO:
+            src_prop  = &src->audio.property;
+            dst_prop  = &dst->audio.property;
+            src_match = &src_prop->match;
+            dst_match = &dst_prop->match;
+
+            dst->audio         = src->audio;
+            dst->audio.group   = strdup(src->audio.group);
+            dst_prop->name     = strdup(src_prop->name);
+            dst_match->pattern = strdup(src_match->pattern);
+            break;
+
         case RESMSG_STATUS:
             dst->status = src->status;
             dst->status.errmsg = strdup(src->status.errmsg);
@@ -47,12 +61,23 @@ resmsg_t *resmsg_internal_copy_message(resmsg_t *src)
 
 void resmsg_internal_destroy_message(resmsg_t *msg)
 {
+    resmsg_property_t *prop;
+    resmsg_match_t    *match;
+
     if (msg != NULL) {
         switch (msg->type) {
 
         case RESMSG_REGISTER:
         case RESMSG_UPDATE:
             free(msg->record.klass);
+            break;
+
+        case RESMSG_AUDIO:
+            prop  = &msg->audio.property;
+            match = &prop->match;
+            free(msg->audio.group);
+            free(prop->name);
+            free(match->pattern);
             break;
 
         case RESMSG_STATUS:
