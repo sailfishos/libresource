@@ -58,8 +58,10 @@ EXPORT int resproto_send_message(resset_t          *rset,
     if (rset->state != RESPROTO_RSET_STATE_CONNECTED ||
         type == RESMSG_REGISTER || type == RESMSG_UNREGISTER)
         success = FALSE;
-    else
+    else {
+        resmsg->any.id = rset->id;
         success = rcon->any.send(rset, resmsg, status);
+    }
 
     return success;
 }
