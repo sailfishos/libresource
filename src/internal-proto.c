@@ -18,6 +18,8 @@ typedef struct {
 static resconn_internal_t   *resproto_manager;
 static uint32_t              timeout = 2000;
 
+static int notify_clients_about_manager_up(void *);
+
 static resset_t *connect_to_manager(resconn_t *, resmsg_t *);
 static resset_t *connect_fail(resconn_t *, resmsg_t *);
 
@@ -58,6 +60,8 @@ int resproto_internal_manager_init(resconn_internal_t *rcon, va_list args)
         rcon->timer.del = timer_del;
 
         resproto_manager = rcon;
+
+        timer_add(0, notify_clients_about_manager_up, NULL);
     }
   
     return success;
@@ -85,6 +89,24 @@ int resproto_internal_client_init(resconn_internal_t *rcon, va_list args)
     return success;
 }
 
+static int notify_clients_about_manager_up(void *dummy)
+{
+    resconn_t  *rc = NULL;
+
+    (void)dummy;
+
+    while ((rc = resconn_list_iterate(rc)) != NULL) {
+        if (rc->any.role   == RESPROTO_ROLE_CLIENT &&
+            rc->any.transp == RESPROTO_TRANSPORT_INTERNAL)
+        {
+            if (rc->internal.mgrup != NULL)
+                rc->internal.mgrup(rc);
+        }
+    }
+
+    return FALSE;
+}
+
 static resset_t *connect_to_manager(resconn_t *rcon, resmsg_t *resmsg)
 {
     char          *name  =  RESPROTO_INTERNAL_MANAGER;
@@ -94,11 +116,16 @@ static resset_t *connect_to_manager(resconn_t *rcon, resmsg_t *resmsg)
     uint32_t       mode  =  resmsg->record.mode;
     resset_t      *rset;
 
-    if ((rset = resset_find(rcon, name, id)) == NULL)
-        rset = resset_create(rcon, name, id, RESPROTO_RSET_STATE_CREATED,
-                             klass, mode, flags->all, flags->opt,
-                             flags->share, flags->mask);
-
+    if (resproto_manager == NULL)
+        rset = NULL;
+    else {
+        if ((rset = resset_find(rcon, name, id)) == NULL) {
+            rset = resset_create(rcon, name, id, RESPROTO_RSET_STATE_CREATED,
+                                 klass, mode, flags->all, flags->opt,
+                                 flags->share, flags->mask);
+        }
+    }
+ 
     return rset;
 }
 

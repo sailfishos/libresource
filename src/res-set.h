@@ -13,6 +13,7 @@ union resconn_u;
 
 typedef enum {
     RESPROTO_RSET_STATE_CREATED = 0,
+    RESPROTO_RSET_STATE_CONNECTING,
     RESPROTO_RSET_STATE_CONNECTED,
     RESPROTO_RSET_STATE_KILLED,
 } resset_state_t;
