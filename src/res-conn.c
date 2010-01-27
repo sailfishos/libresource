@@ -131,11 +131,7 @@ EXPORT resset_t *resconn_connect(resconn_t         *rcon,
     }
     else {
         rset = rcon->any.connect(rcon, resmsg);
-
-        if (rset != NULL && rset->state == RESPROTO_RSET_STATE_CREATED) {
-            rcon->any.send(rset, resmsg, status);
-            rset->state = RESPROTO_RSET_STATE_CONNECTING;
-        }
+        rcon->any.send(rset, resmsg, status);
     }
 
     return rset;

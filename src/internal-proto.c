@@ -326,7 +326,9 @@ static void receive_message_init(resconn_internal_t *rcon,
         mode  =  msg->record.mode;
         flags = &msg->record.rset;
 
-        if ((resset_find((resconn_t *)rcon, peer, msg->any.id)) == NULL) {
+        if ((resset_find((resconn_t *)rcon, peer, msg->any.id)) != NULL)
+            return;             /* multiple register request */
+        else {
             resset_create((resconn_t *)rcon, peer, msg->any.id,
                           RESPROTO_RSET_STATE_CONNECTED,
                           klass, mode, flags->all, flags->opt,
