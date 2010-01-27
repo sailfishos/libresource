@@ -656,6 +656,14 @@ static void usage(int exit_code)
     printf("\t\tVideoPlayback\n");
     printf("\t\tAudioRecording\n");
     printf("\t\tVideoRecording\n");
+    printf("\t\tVibra\n");
+    printf("\t\tLeds\n");
+    printf("\t\tBackLight\n");
+    printf("\t\tSystemButton\n");
+    printf("\t\tLockButton\n");
+    printf("\t\tScaleButton\n");
+    printf("\t\tSnapButton\n");
+    printf("\t\tLensCover\n");
     printf("\t  no whitespace allowed in the resource list.\n");
     printf("\tmodes:\n");
     printf("\t  comma separated lis of the following modes\n");
@@ -734,6 +742,14 @@ static uint32_t parse_resource_list(char *rlist_str, int exit_if_error)
         { RESMSG_VIDEO_PLAYBACK ,  "VideoPlayback"  },
         { RESMSG_AUDIO_RECORDING,  "AudioRecording" },
         { RESMSG_VIDEO_RECORDING,  "VideoRecording" },
+        { RESMSG_VIBRA          ,  "Vibra"          },
+        { RESMSG_LEDS           ,  "Leds"           },
+        { RESMSG_BACKLIGHT      ,  "BackLight"      },
+        { RESMSG_SYSTEM_BUTTON  ,  "SystemButton"   },
+        { RESMSG_LOCK_BUTTON    ,  "LockButton"     },
+        { RESMSG_SCALE_BUTTON   ,  "ScaleButton"    },
+        { RESMSG_SNAP_BUTTON    ,  "SnapButton"     },
+        { RESMSG_LENS_COVER     ,  "LensCover"      },
         {           0           ,       NULL        }
     };
 

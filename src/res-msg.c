@@ -232,6 +232,14 @@ static char *flag_str(uint32_t flag)
     case RESMSG_VIDEO_PLAYBACK:     str = "video_playback";    break;
     case RESMSG_AUDIO_RECORDING:    str = "audio_recording";   break;
     case RESMSG_VIDEO_RECORDING:    str = "video_recording";   break;
+    case RESMSG_VIBRA:              str = "vibra";             break;
+    case RESMSG_LEDS:               str = "leds";              break;
+    case RESMSG_BACKLIGHT:          str = "backlight";         break;
+    case RESMSG_SYSTEM_BUTTON:      str = "system_button";     break;
+    case RESMSG_LOCK_BUTTON:        str = "lock_button";       break;
+    case RESMSG_SCALE_BUTTON:       str = "scale_button";      break;
+    case RESMSG_SNAP_BUTTON:        str = "snap_button";       break;
+    case RESMSG_LENS_COVER:         str = "lens_cover";        break;
     default:                        str = NULL;                break;
     }
 
