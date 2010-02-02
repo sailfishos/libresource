@@ -6,7 +6,7 @@ AC_PREREQ(2.59)
 m4_define(TDIR, esyscmd(/bin/bash -c pwd | tr \\n /))
 m4_define(PKGNAM, [libresource])
 m4_define(PKGSRC, esyscmd(grep -m 1 -o "PKGNAM (.*)" TDIR/debian/changelog | tr -d \\n))
-m4_define(PKGVER, regexp(PKGSRC, PKGNAM[ (\(.*\))], [\1]))
+m4_define(PKGVER, regexp(PKGSRC, PKGNAM[ ([1234]*:*\([0123456789.]+\).*)], [\1]))
 
 
 AC_INIT(PKGNAM, PKGVER, [multimedia@ok.research.nokia.com])
