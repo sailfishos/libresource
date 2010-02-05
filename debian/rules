@@ -49,3 +49,7 @@ DEB_INSTALL_CHANGELOGS_libresource0 := --no-act
 DEB_INSTALL_DOCS_libresource0-dbg := --no-act
 DEB_INSTALL_CHANGELOGS_libresource0-dbg := --no-act
 
+DEB_INSTALL_DOCS_libresource0-glib := --no-act
+DEB_INSTALL_CHANGELOGS_libresource0-glib := --no-act
+DEB_INSTALL_DOCS_libresource0-glib-dbg := --no-act
+DEB_INSTALL_CHANGELOGS_libresource0flib--dbg := --no-act

@@ -58,9 +58,11 @@ AM_CONDITIONAL([DEBUG], [test x$debug = xtrue])
 
 AC_OUTPUT([
 	libresource0.pc
+	libresource0-glib.pc
 	Makefile
 	src/Makefile
 	client/Makefile
+	examples/Makefile
 ])
 
 echo "
