@@ -1,4 +1,4 @@
-libdir = ${src_dir}
+#libdir = ${src_dir}
 lib_LTLIBRARIES = libresource.la libresource-glib.la
 
 libresource_la_SOURCES = res-msg.c res-conn.c res-proto.c res-set.c \
