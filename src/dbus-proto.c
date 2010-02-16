@@ -205,10 +205,11 @@ static int send_message(resset_t *rset,resmsg_t *rmsg,resproto_status_t status)
                                                        reply,
                                                        resconn_reply_destroy);
             }
+
+            if (success)
+                resset_ref(rset);
         }
 
-        if (success)
-            resset_ref(rset);
 
         dbus_message_unref(dmsg);
     }
