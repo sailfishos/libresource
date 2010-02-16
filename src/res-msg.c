@@ -118,7 +118,7 @@ EXPORT char *resmsg_type_str(resmsg_type_t type)
     case RESMSG_UNREGISTER:    str = "unregister";       break;
     case RESMSG_UPDATE:        str = "update";           break;
     case RESMSG_ACQUIRE:       str = "acquire";          break;
-    case RESMSG_RELEASE:       str = "releaase";         break;
+    case RESMSG_RELEASE:       str = "release";          break;
     case RESMSG_GRANT:         str = "grant";            break;
     case RESMSG_ADVICE:        str = "advice";           break;
     case RESMSG_AUDIO:         str = "audio";            break;
