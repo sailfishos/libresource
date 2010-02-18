@@ -50,5 +50,11 @@ Depends: libresource0-glib (= ${binary:Version})
 Description: Maemo resource management high level C API debug symbols.
  Resource management for Maemo.
 
-
-
+Package: libresource-tests
+Section: misc
+Depends: testrunner, ${shlibs:Depends}, gcc, libc6-dev, pkg-config
+XB-Maemo-CI-Packages: libresource0
+XB-Maemo-CI-Stage: fast, staging, acceptance, validation
+Architecture: any
+Description: libresource tests package
+ This package contains tests which can be used in CI environment

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<testdefinition version="0.1">
+  <suite name="libresource-tests" domain="Multimedia Middleware"> 
+    <set name="libresource-tests" feature="Resource policy">
+
+      <case name="signature_test" type="Functional" level="Component" subfeature="High-level C API" description="signature_test" timeout="15">
+        <step expected_result="0">gcc -c -I /usr/include/libresource-tests/ `pkg-config --cflags dbus-glib-1` /usr/lib/libresource-tests/resource-test.c</step>
+      </case>
+
+      <environments>
+        <scratchbox>true</scratchbox>
+        <hardware>false</hardware>    
+      </environments>
+
+    </set>
+  </suite>
+</testdefinition>
