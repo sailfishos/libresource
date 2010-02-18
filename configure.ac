@@ -63,6 +63,7 @@ AC_OUTPUT([
 	src/Makefile
 	client/Makefile
 	examples/Makefile
+	tests/Makefile
 ])
 
 echo "

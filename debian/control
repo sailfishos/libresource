@@ -1,7 +1,7 @@
 Source: libresource
 Priority: optional
 Maintainer: Janos Kovacs <janos.f.kovacs@nokia.com>
-Build-Depends: debhelper (>= 4), autotools-dev, pkg-config, libdbus-1-dev, libdbus-glib-1-dev
+Build-Depends: debhelper (>= 4), autotools-dev, pkg-config, libdbus-1-dev, libdbus-glib-1-dev, check
 Standards-Version: 0.1.0
 Section: libs
 
@@ -52,7 +52,7 @@ Description: Maemo resource management high level C API debug symbols.
 
 Package: libresource-tests
 Section: misc
-Depends: testrunner, ${shlibs:Depends}, gcc, libc6-dev, pkg-config
+Depends: testrunner, ${shlibs:Depends}
 XB-Maemo-CI-Packages: libresource0
 XB-Maemo-CI-Stage: fast, staging, acceptance, validation
 Architecture: any

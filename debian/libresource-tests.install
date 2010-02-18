@@ -1,3 +1,2 @@
-../../src/*.h /usr/include/libresource-tests/
-../../tests/resource-test.c /usr/lib/libresource-tests/
+../../tests/resource_test /usr/lib/libresource-tests/
 ../../tests/*.xml /usr/share/libresource-tests/

@@ -3,13 +3,15 @@
   <suite name="libresource-tests" domain="Multimedia Middleware"> 
     <set name="libresource-tests" feature="Resource policy">
 
-      <case name="signature_test" type="Functional" level="Component" subfeature="High-level C API" description="signature_test" timeout="15">
-        <step expected_result="0">gcc -c -I /usr/include/libresource-tests/ `pkg-config --cflags dbus-glib-1` /usr/lib/libresource-tests/resource-test.c</step>
-      </case>
+      <case name="resource_set_create_and_destroy"        type="Functional" level="Component" subfeature="High-level C API" description="resource_set_create_and_destroy"        timeout="15"><step expected_result="0">/usr/lib/libresource-tests/resource_test 1</step></case>
+      <case name="resource_set_configure_resources"       type="Functional" level="Component" subfeature="High-level C API" description="resource_set_configure_resources"       timeout="15"><step expected_result="0">/usr/lib/libresource-tests/resource_test 2</step></case>
+      <case name="resource_set_configure_advice_callback" type="Functional" level="Component" subfeature="High-level C API" description="resource_set_configure_advice_callback" timeout="15"><step expected_result="0">/usr/lib/libresource-tests/resource_test 3</step></case>
+      <case name="resource_set_acquire_and_release"       type="Functional" level="Component" subfeature="High-level C API" description="resource_set_acquire_and_release"       timeout="15"><step expected_result="0">/usr/lib/libresource-tests/resource_test 4</step></case>
+      <case name="resource_set_configure_audio"           type="Functional" level="Component" subfeature="High-level C API" description="resource_set_configure_audio"           timeout="15"><step expected_result="0">/usr/lib/libresource-tests/resource_test 5</step></case>
 
       <environments>
         <scratchbox>true</scratchbox>
-        <hardware>false</hardware>    
+        <hardware>true</hardware>    
       </environments>
 
     </set>
