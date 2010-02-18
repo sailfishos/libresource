@@ -89,7 +89,7 @@ static void            connect_to_manager(resconn_t *, resource_set_t *);
 static void            disconnect_from_manager(resmsg_t *, resset_t *,void *);
 static void            receive_grant_message(resmsg_t *, resset_t *, void *);
 static void            receive_advice_message(resmsg_t *, resset_t *, void *);
-static int             send_reqister_message(resource_set_t *, uint32_t);
+static int             send_register_message(resource_set_t *, uint32_t);
 static int             send_unregister_message(resource_set_t *, uint32_t);
 static int             send_update_message(resource_set_t *, uint32_t);
 static int             send_audio_message(resource_set_t *, uint32_t);
@@ -378,7 +378,7 @@ static void receive_advice_message(resmsg_t *msg, resset_t *resset, void *data)
     }
 }
 
-static int send_reqister_message(resource_set_t *rs, uint32_t rn)
+static int send_register_message(resource_set_t *rs, uint32_t rn)
 {
     resset_t *resset;
     resmsg_t  msg;
@@ -636,7 +636,7 @@ static void send_request(resource_set_t *rs)
         rn = rq->reqno;
 
         switch (rq->msgtyp) {
-        case RESMSG_REGISTER:   success = send_reqister_message(rs, rn); break;
+        case RESMSG_REGISTER:   success = send_register_message(rs, rn); break;
         case RESMSG_UNREGISTER: success = send_unregister_message(rs,rn);break;
         case RESMSG_UPDATE:     success = send_update_message(rs, rn);   break;
         case RESMSG_AUDIO:      success = send_audio_message(rs, rn);    break;
