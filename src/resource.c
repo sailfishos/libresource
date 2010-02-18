@@ -160,8 +160,7 @@ EXPORT resource_set_t *resource_set_create(const char          *klass,
 
 EXPORT void resource_set_destroy(resource_set_t *rs)
 {
-    
-
+    push_request(rs, RESMSG_UNREGISTER, NULL, NULL);
 }
 
 
@@ -417,7 +416,7 @@ static int send_unregister_message(resource_set_t *rs, uint32_t rn)
         msg.possess.id       = rs->id;
         msg.possess.reqno    = rn;
 
-        success = resproto_disconnect(resset, &msg, NULL);
+        success = resconn_disconnect(resset, &msg, status_cb);
     }
 
     return success;
@@ -566,6 +565,8 @@ static void status_cb(resset_t *resset, resmsg_t *msg)
                                 st->errcod, st->errmsg);
             }
 
+            rq->busy = FALSE;
+
             send_request(rs);
         }
     }
@@ -588,12 +589,13 @@ static void send_request(resource_set_t *rs)
         rn = rq->reqno;
 
         switch (rq->msgtyp) {
-        case RESMSG_REGISTER:  success = send_reqister_message(rs, rn);  break;
-        case RESMSG_UPDATE:    success = send_update_message(rs, rn);    break;
-        case RESMSG_AUDIO:     success = send_audio_message(rs, rn);     break;
-        case RESMSG_ACQUIRE:   success = send_acquire_message(rs, rn);   break;
-        case RESMSG_RELEASE:   success = send_release_message(rs, rn);   break;
-        default:               success = FALSE;                          break;
+        case RESMSG_REGISTER:   success = send_reqister_message(rs, rn); break;
+        case RESMSG_UNREGISTER: success = send_unregister_message(rs,rn);break;
+        case RESMSG_UPDATE:     success = send_update_message(rs, rn);   break;
+        case RESMSG_AUDIO:      success = send_audio_message(rs, rn);    break;
+        case RESMSG_ACQUIRE:    success = send_acquire_message(rs, rn);  break;
+        case RESMSG_RELEASE:    success = send_release_message(rs, rn);  break;
+        default:                success = FALSE;                         break;
         }
 
         if (success) {
