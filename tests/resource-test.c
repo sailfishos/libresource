@@ -6,6 +6,12 @@
 
 #include "resource.h"
 
+static void grant(resset_t *rset);
+static void advice(resset_t *rset);
+static void disconnect(resset_t *rset);
+
+resconn_linkup_t resconn_linkup_function;
+
 void dummy_callback(resource_set_t *resource_set,
                     uint32_t        resources,
                     void           *userdata)
@@ -22,6 +28,7 @@ START_TEST (test_resource_set_create_and_destroy)
 	fail_if(( rs = resource_set_create("player", RESOURCE_AUDIO_PLAYBACK, 0, 0, dummy_callback, 0)) == NULL );
 
 	resource_set_destroy(rs);
+	resconn_linkup_function(rs);
 }
 END_TEST
 
@@ -30,7 +37,7 @@ START_TEST (test_resource_set_configure_resources)
 	resource_set_t *rs;
 
 	rs = resource_set_create("player", RESOURCE_AUDIO_PLAYBACK, 0, 0, dummy_callback, 0);
-	resource_set_configure_resources(rs, 0, 0);
+	resource_set_configure_resources(rs, RESOURCE_VIDEO_PLAYBACK, RESOURCE_AUDIO_PLAYBACK);
 	resource_set_destroy(rs);
 }
 END_TEST
@@ -41,7 +48,9 @@ START_TEST (test_resource_set_configure_advice_callback)
 
 	rs = resource_set_create("player", RESOURCE_AUDIO_PLAYBACK, 0, 0, dummy_callback, 0);
 	resource_set_configure_advice_callback(rs, dummy_callback, NULL);
+	advice(rs);
 	resource_set_destroy(rs);
+	disconnect(rs);
 }
 END_TEST
 
@@ -51,6 +60,7 @@ START_TEST (test_resource_set_acquire_and_release)
 
 	rs = resource_set_create("player", RESOURCE_AUDIO_PLAYBACK, 0, 0, dummy_callback, 0);
 	resource_set_acquire(rs);
+	grant(rs);
 	resource_set_release(rs);
 	resource_set_destroy(rs);
 }
@@ -144,6 +154,9 @@ resconn_t* resproto_init(resproto_role_t role, resproto_transport_t transport, .
 
     va_start(args, transport);
     callbackFunction = va_arg(args, resconn_linkup_t);
+
+    resconn_linkup_function = callbackFunction;
+
     dbusConnection = va_arg(args, DBusConnection *);
     va_end(args);
 
@@ -191,8 +204,13 @@ char *resmsg_res_str(uint32_t res, char *buf, int len)
     return buf;
 }
 
-int resproto_set_handler(union resconn_u *r, resmsg_type_t t, resproto_handler_t h)
+resproto_handler_t handlers[3];
+int resproto_set_handler(union resconn_u *r, resmsg_type_t type, resproto_handler_t h)
 {
+    if (type == RESMSG_UNREGISTER) handlers[0] = h;
+    if (type == RESMSG_GRANT)      handlers[1] = h;
+    if (type == RESMSG_ADVICE)     handlers[2] = h;
+
     return 1;
 }
 
@@ -229,7 +247,7 @@ int resproto_send_message(resset_t          *rset,
         success = FALSE;
     else {
         resmsg->any.id = rset->id;
-        success = rcon->any.send(rset, resmsg, status);
+        success = TRUE;
     }
 
     return success;
@@ -239,11 +257,22 @@ int resproto_send_message(resset_t          *rset,
 DBusConnection *resource_get_dbus_bus(DBusBusType type, DBusError *err)
 {
 	return 0xC0FFEE;
-//    DBusConnection *conn = NULL;
-//
-//    if ((conn = dbus_bus_get(type, err)) != NULL) {
-//        dbus_connection_setup_with_g_main(conn, NULL);
-//    }
-//
-//    return conn;
+}
+
+static void grant(resset_t *rset)
+{
+	static resmsg_t msg = {0};
+    if (handlers[1])  handlers[1](rset, &msg, NULL);
+}
+
+static void advice(resset_t *rset)
+{
+	static resmsg_t msg = {0};
+    if (handlers[2])  handlers[2](rset, &msg, NULL);
+}
+
+static void disconnect(resset_t *rset)
+{
+	static resmsg_t msg = {0};
+    if (handlers[0])  handlers[0](rset, &msg, NULL);
 }
