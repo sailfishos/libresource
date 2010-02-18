@@ -594,6 +594,9 @@ static DBusHandlerResult manager_method(DBusConnection *dcon,
                         dbus_message_ref(dbusmsg);
                         rcon->dbus.receive(&resmsg, rset, dbusmsg);
                     }
+                    if (resmsg.type == RESMSG_UNREGISTER) {
+                        rcon->dbus.disconn(rset);
+                    }
                         
                     return DBUS_HANDLER_RESULT_HANDLED;
                 }

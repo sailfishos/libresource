@@ -90,6 +90,7 @@ static void            disconnect_from_manager(resmsg_t *, resset_t *,void *);
 static void            receive_grant_message(resmsg_t *, resset_t *, void *);
 static void            receive_advice_message(resmsg_t *, resset_t *, void *);
 static int             send_reqister_message(resource_set_t *, uint32_t);
+static int             send_unregister_message(resource_set_t *, uint32_t);
 static int             send_update_message(resource_set_t *, uint32_t);
 static int             send_audio_message(resource_set_t *, uint32_t);
 static int             send_acquire_message(resource_set_t *, uint32_t);
@@ -159,6 +160,8 @@ EXPORT resource_set_t *resource_set_create(const char          *klass,
 
 EXPORT void resource_set_destroy(resource_set_t *rs)
 {
+    
+
 }
 
 
@@ -398,6 +401,26 @@ static int send_reqister_message(resource_set_t *rs, uint32_t rn)
     }
 
     return rs->resset ? TRUE : FALSE;
+}
+
+static int send_unregister_message(resource_set_t *rs, uint32_t rn)
+{
+    resset_t *resset  = rs->resset;
+    int       success = FALSE;
+    resmsg_t  msg;
+
+    if (resset != NULL && (void *)rs == resset->userdata) {
+        resource_log("sending unregister message");
+
+        memset(&msg, 0, sizeof(msg));
+        msg.possess.type     = RESMSG_UNREGISTER;
+        msg.possess.id       = rs->id;
+        msg.possess.reqno    = rn;
+
+        success = resproto_disconnect(resset, &msg, NULL);
+    }
+
+    return success;
 }
 
 static int send_update_message(resource_set_t *rs, uint32_t rn)

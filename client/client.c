@@ -55,6 +55,7 @@ static void     signal_handler(int, siginfo_t *, void *);
 static void     create_mainloop(void);
 static void     destroy_mainloop(void);
 static void     run_mainloop(void);
+static void     break_out_mainloop(void);
 
 static void     create_input(void);
 static void     destroy_input(void);
@@ -69,6 +70,7 @@ static void     destroy_dbus(void);
 static void     create_manager(void);
 static void     destroy_manager();
 static void     connect_to_manager(resconn_t *);
+static void     disconnect_from_manager(void);
 static void     manager_status(resset_t *, resmsg_t *);
 static void     manager_receive_message(resmsg_t *, resset_t *, void *);
 static void     manager_send_message(resmsg_t *);
@@ -174,6 +176,11 @@ static void destroy_mainloop(void)
 static void run_mainloop(void)
 {
     g_main_loop_run(main_loop);
+}
+
+static void break_out_mainloop(void)
+{
+    g_main_loop_quit(main_loop);
 }
 
 static void create_input(void)
@@ -345,6 +352,9 @@ static void parse_input(void)
             manager_send_message(&msg);
         } while (0);
     } 
+    else if (!strncmp(str, "disconnect", 10)) {
+        disconnect_from_manager();
+    }
     else {
         print_message("invalid input '%s'", input.buf);
         return;
@@ -483,6 +493,21 @@ static void connect_to_manager(resconn_t *rc)
     reqtyp[index] = RESMSG_REGISTER;
 }
 
+static void disconnect_from_manager(void)
+{
+    resmsg_t  resmsg;
+    int       index;
+
+    resmsg.possess.type  = RESMSG_UNREGISTER;
+    resmsg.possess.id    = config.id;
+    resmsg.possess.reqno = ++reqno;
+
+    resconn_disconnect(rset, &resmsg, manager_status);
+
+    index = REQHASH_INDEX(reqno);
+    reqtyp[index] = RESMSG_UNREGISTER;
+}
+
 static void manager_status(resset_t *rset, resmsg_t *msg)
 {
     char          *str;
@@ -503,9 +528,15 @@ static void manager_status(resset_t *rset, resmsg_t *msg)
         }
         else {
             switch (type) {
-            case RESMSG_REGISTER:        accept_input(TRUE);      break;
-            case RESMSG_UNREGISTER:      accept_input(FALSE);     break;
-            default:                                              break;
+            case RESMSG_REGISTER:
+                accept_input(TRUE);
+                break;
+            case RESMSG_UNREGISTER:
+                accept_input(FALSE);
+                break_out_mainloop();
+                break;
+            default:
+                break;
             }
         }
 
