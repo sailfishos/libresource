@@ -28,7 +28,7 @@ resource_set_t *resource_set_create(const char          *klass,
 void resource_set_destroy(resource_set_t *resource_set);
 
 int  resource_set_configure_advice_callback(resource_set_t      *resource_set,
-                                            resource_callback_t *advicecb,
+                                            resource_callback_t  advicecb,
                                             void                *advicedata);
 
 int  resource_set_configure_resources(resource_set_t *resource_set,

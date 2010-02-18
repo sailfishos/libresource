@@ -97,10 +97,13 @@ static int             send_acquire_message(resource_set_t *, uint32_t);
 static int             send_release_message(resource_set_t *, uint32_t);
 static void            connect_complete_cb(resource_set_t *, uint32_t, void *,
                                            int32_t, const char *);
+static void            disconnect_complete_cb(resource_set_t *, uint32_t,
+                                              void *, int32_t, const char *);
 static void            request_complete_cb(resource_set_t *, uint32_t,
                                            void *, int32_t, const char *);
 static void            status_cb(resset_t *, resmsg_t *);
 static void            send_request(resource_set_t *);
+static void            config_destroy(resource_config_t *);
 static int             audio_config_create(resource_set_t *, const char *,
                                            pid_t pid, const char *);
 static int             audio_config_update(resource_config_t *, const char *,
@@ -109,6 +112,7 @@ static uint32_t        push_request(resource_set_t *, resmsg_type_t,
                                     request_complete_t, void *);
 static request_t      *peek_request(resource_set_t *);
 static request_t      *pop_request(resource_set_t *, uint32_t);
+static void            destroy_request(request_t *);
 static void            resource_log(const char *, ...);
 
 
@@ -160,12 +164,12 @@ EXPORT resource_set_t *resource_set_create(const char          *klass,
 
 EXPORT void resource_set_destroy(resource_set_t *rs)
 {
-    push_request(rs, RESMSG_UNREGISTER, NULL, NULL);
+    push_request(rs, RESMSG_UNREGISTER, disconnect_complete_cb, NULL);
 }
 
 
 EXPORT int resource_set_configure_advice_callback(resource_set_t      *rs,
-                                                  resource_callback_t *advcb,
+                                                  resource_callback_t  advcb,
                                                   void                *advdata)
 {
     if (rs != NULL) {
@@ -537,6 +541,45 @@ static void connect_complete_cb(resource_set_t *rs, uint32_t rn, void *data,
     }
 }
 
+static void disconnect_complete_cb(resource_set_t *rs, uint32_t no, void *data,
+                                   int32_t errcod, const char *errmsg)
+{
+    resource_set_t    *prev;
+    resource_config_t *cfg;
+    resource_config_t *cn;
+    request_t         *rq;
+    request_t         *rn;
+
+    (void)no;
+    (void)data;
+    (void)errcod;
+    (void)errmsg;
+
+    for (prev = (resource_set_t *)&rslist;   prev->next;   prev = prev->next) {
+        if (rs == prev->next) {
+            resource_log("resource set %u is going to be destroyed", rs->id);
+
+            prev->next = rs->next;
+
+            free(rs->klass);
+
+            for (cfg = rs->configs;  cfg;   cfg = cn) {
+                cn = cfg->any.next;
+                config_destroy(cfg);
+            }
+    
+            for (rq = rs->reqlist;  rq;  rq = rn) {
+                rn = rq->next;
+                destroy_request(rq);
+            }
+
+            free(rs);
+
+            return;
+        }
+    }
+}
+
 static void request_complete_cb(resource_set_t *rs, uint32_t rn, void *data,
                                 int32_t errcod, const char *errmsg)
 {
@@ -551,6 +594,7 @@ static void status_cb(resset_t *resset, resmsg_t *msg)
 {
     resource_set_t  *rs = resset->userdata;
     resmsg_status_t *st = &msg->status;
+    resmsg_type_t    mt;
     request_t       *rq;
 
     if (rs != NULL && rs->resset == resset) {
@@ -560,14 +604,17 @@ static void status_cb(resset_t *resset, resmsg_t *msg)
 
         if ((rq = pop_request(rs, msg->status.reqno)) != NULL) {
 
+            mt = rq->msgtyp;
+
             if (rq->cb.function != NULL) {
                 rq->cb.function(rs, msg->any.reqno, rq->cb.data,
                                 st->errcod, st->errmsg);
             }
 
-            rq->busy = FALSE;
+            destroy_request(rq);
 
-            send_request(rs);
+            if (mt != RESMSG_UNREGISTER)
+                send_request(rs);
         }
     }
 }
@@ -608,9 +655,20 @@ static void send_request(resource_set_t *rs)
 
         resource_log("failed to send %s message", resmsg_type_str(rq->msgtyp));
 
-        pop_request(rs, rn);
+        if (pop_request(rs, rn) == rq)
+            destroy_request(rq);
 
     } /* while */
+}
+
+static void config_destroy(resource_config_t *cfg)
+{
+    if (cfg->any.mask == RESOURCE_AUDIO_PLAYBACK) {
+        free(cfg->audio.group);
+        free(cfg->audio.stream);
+    }
+
+    free(cfg);
 }
 
 static int audio_config_create(resource_set_t *rs,
@@ -681,6 +739,8 @@ static int audio_config_update(resource_config_t *cfg,
     return need_update;
 }
 
+
+
 static uint32_t push_request(resource_set_t     *rs,
                              resmsg_type_t       msgtyp,
                              request_complete_t  callback,
@@ -748,7 +808,10 @@ static request_t *pop_request(resource_set_t *rs, uint32_t rn)
     return rq;
 }
 
-
+static void destroy_request(request_t *rq)
+{
+    free(rq);
+}
 
 static void resource_log(const char *fmt, ...)
 {

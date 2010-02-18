@@ -15,6 +15,8 @@ static void run_mainloop (void);
 static void grant_callback (resource_set_t *, uint32_t, void *);
 static void advice_callback (resource_set_t *, uint32_t, void *);
 
+static void schedule_destruction (resource_set_t *, guint);
+static gboolean destructor (void *);
 
 int main (int argc, char **atgv)
 {
@@ -27,6 +29,8 @@ int main (int argc, char **atgv)
   resource_set_configure_advice_callback (resource_set, advice_callback, NULL);
   resource_set_configure_audio (resource_set, "fmradio", 0,NULL);
   resource_set_acquire (resource_set);
+
+  schedule_destruction (resource_set, 20);
 
   run_mainloop ();
 
@@ -80,6 +84,22 @@ static void advice_callback (resource_set_t *resource_set,
     printf("*** %s(): adviced resources %s\n", __FUNCTION__,
            resmsg_res_str (resources, buf, sizeof(buf)));
 }
+
+
+static void schedule_destruction (resource_set_t *resource_set, guint seconds)
+{
+    g_timeout_add (seconds * 1000, destructor, resource_set);
+}
+
+static gboolean destructor (void *data)
+{
+    resource_set_t *resource_set = data;
+
+    resource_set_destroy (resource_set);
+
+    return FALSE;
+}
+
 
 
 /*
