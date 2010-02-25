@@ -1,7 +1,7 @@
 Source: libresource
 Priority: optional
 Maintainer: Janos Kovacs <janos.f.kovacs@nokia.com>
-Build-Depends: debhelper (>= 4), autotools-dev, pkg-config, libdbus-1-dev, libdbus-glib-1-dev, check
+Build-Depends: debhelper (>= 4), autotools-dev, pkg-config, libdbus-1-dev, libdbus-glib-1-dev, check, cdbs
 Standards-Version: 0.1.0
 Section: libs
 
