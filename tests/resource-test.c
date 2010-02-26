@@ -6,19 +6,17 @@
 
 #include "resource.h"
 
-
+static void advice_callback (resource_set_t *resource_set,
+                             uint32_t        resources,
+                             void           *userdata);
+static void grant_callback (resource_set_t *resource_set,
+                            uint32_t        resources,
+                            void           *userdata);
+void simulate_server_response();
 
 static void grant(resset_t *rset);
 static void advice(resset_t *rset);
 static void disconnect(resset_t *rset);
-
-resconn_linkup_t resconn_linkup_function;
-
-void dummy_callback(resource_set_t *resource_set,
-                    uint32_t        resources,
-                    void           *userdata)
-{
-}
 
 START_TEST (test_resource_set_create_and_destroy)
 {
@@ -29,14 +27,12 @@ START_TEST (test_resource_set_create_and_destroy)
 	simulate_server_response();
 
 	// 1.2. should succeed with valid args
-	fail_if(( rs = resource_set_create("player", RESOURCE_AUDIO_PLAYBACK, 0, 0, dummy_callback, 0)) == NULL );
+	fail_if(( rs = resource_set_create("player", RESOURCE_AUDIO_PLAYBACK, 0, 0, grant_callback, 0)) == NULL );
 	simulate_server_response();
 
 	resource_set_destroy(rs);
 	simulate_server_response();
 
-	resconn_linkup_function(rs);
-	simulate_server_response();
 }
 END_TEST
 
@@ -44,12 +40,13 @@ START_TEST (test_resource_set_configure_resources)
 {
 	resource_set_t *rs;
 
-	fail_if(( rs = resource_set_create("player", RESOURCE_AUDIO_PLAYBACK, 0, 0, dummy_callback, 0)) == NULL );
-	//simulate_server_response();
+	fail_if(( rs = resource_set_create("player", RESOURCE_AUDIO_PLAYBACK, 0, 0, grant_callback, 0)) == NULL );
+	simulate_server_response();  // :TODO: investigate segfault
+	grant(rs);
 	resource_set_configure_resources(rs, RESOURCE_VIDEO_PLAYBACK, RESOURCE_AUDIO_PLAYBACK);
-	//simulate_server_response();
+	simulate_server_response();
 	resource_set_destroy(rs);
-	//simulate_server_response();
+	simulate_server_response();
 }
 END_TEST
 
@@ -57,15 +54,11 @@ START_TEST (test_resource_set_configure_advice_callback)
 {
 	resource_set_t *rs;
 
-	rs = resource_set_create("player", RESOURCE_AUDIO_PLAYBACK, 0, 0, dummy_callback, 0);
+	rs = resource_set_create("player", RESOURCE_AUDIO_PLAYBACK, 0, 0, grant_callback, 0);
 	simulate_server_response();
-	resource_set_configure_advice_callback(rs, dummy_callback, NULL);
-	simulate_server_response();
-	advice(rs);
+	resource_set_configure_advice_callback(rs, advice_callback, NULL);
 	simulate_server_response();
 	resource_set_destroy(rs);
-	simulate_server_response();
-	disconnect(rs);
 	simulate_server_response();
 }
 END_TEST
@@ -74,13 +67,14 @@ START_TEST (test_resource_set_acquire_and_release)
 {
 	resource_set_t *rs;
 
-	rs = resource_set_create("player", RESOURCE_AUDIO_PLAYBACK, 0, 0, dummy_callback, 0);
+	rs = resource_set_create("player", RESOURCE_AUDIO_PLAYBACK, 0, 0, grant_callback, 0);
 	simulate_server_response();
+	advice(rs);
 	resource_set_acquire(rs);
 	simulate_server_response();
-	grant(rs);
 	resource_set_release(rs);
 	simulate_server_response();
+	disconnect(rs);
 	resource_set_destroy(rs);
 	simulate_server_response();
 }
@@ -91,18 +85,23 @@ START_TEST (test_resource_set_configure_audio)
 	resource_set_t *rs, *rs2;
 
 	// 1.1. should return false when passed not an audio resource
-	rs = resource_set_create("player", RESOURCE_VIDEO_PLAYBACK, 0, 0, dummy_callback, 0);
+	rs = resource_set_create("player", RESOURCE_VIDEO_PLAYBACK, 0, 0, grant_callback, 0);
 	fail_if( resource_set_configure_audio(rs, "player", 0, NULL));
 	simulate_server_response();
 	resource_set_destroy(rs);
 	simulate_server_response();
 
 	// 2.1. create a set with a video playback resource
-	rs = resource_set_create("player", RESOURCE_VIDEO_PLAYBACK | RESOURCE_AUDIO_PLAYBACK, 0, 0, dummy_callback, 0);
+	rs = resource_set_create("player", RESOURCE_VIDEO_PLAYBACK | RESOURCE_AUDIO_PLAYBACK, 0, 0, grant_callback, 0);
 	simulate_server_response();
 	// 2.2. add a video resource
-	//fail_unless( resource_set_configure_resources(rs, RESOURCE_VIDEO_PLAYBACK, 0) );
+	fail_unless( resource_set_configure_resources(rs, RESOURCE_VIDEO_PLAYBACK, 0) );
+	simulate_server_response();
+	resource_set_destroy(rs);
+	simulate_server_response();
 	// 2.3. should succeed when passed an audio resource
+	rs = resource_set_create("player", RESOURCE_VIDEO_PLAYBACK | RESOURCE_AUDIO_PLAYBACK, 0, 0, grant_callback, 0);
+	simulate_server_response();
 	fail_unless( resource_set_configure_audio(rs, "player", 0, NULL) );
 	simulate_server_response();
 	// 2.4. add another config
@@ -148,7 +147,35 @@ main(int argc, char* argv[]) {
 	int number_failed = srunner_ntests_failed (sr);
 	srunner_free (sr);
 
+
 	return number_failed;
+}
+
+
+static void grant_callback (resource_set_t *resource_set,
+                            uint32_t        resources,
+                            void           *userdata)
+{
+    char buf[512];
+
+    (void)resource_set;
+    (void)userdata;
+
+    printf("*** %s(): granted resources %s\n", __FUNCTION__,
+           resmsg_res_str (resources, buf, sizeof(buf)));
+}
+
+static void advice_callback (resource_set_t *resource_set,
+                             uint32_t        resources,
+                             void           *userdata)
+{
+    char buf[512];
+
+    (void)resource_set;
+    (void)userdata;
+
+    printf("*** %s(): adviced resources %s\n", __FUNCTION__,
+           resmsg_res_str (resources, buf, sizeof(buf)));
 }
 
 
@@ -166,8 +193,6 @@ resconn_t* resproto_init(resproto_role_t role, resproto_transport_t transport, .
 
     va_start(args, transport);
     callbackFunction = va_arg(args, resconn_linkup_t);
-
-    resconn_linkup_function = callbackFunction;
 
     dbusConnection = va_arg(args, DBusConnection *);
     va_end(args);
@@ -333,7 +358,7 @@ int resproto_send_message(resset_t          *rset,
 
 DBusConnection *resource_get_dbus_bus(DBusBusType type, DBusError *err)
 {
-	return 0xC0FFEE;
+	return (DBusConnection *) 0xC0FFEE;
 }
 
 resproto_handler_t handlers[3];
@@ -348,18 +373,18 @@ int resproto_set_handler(union resconn_u *r, resmsg_type_t type, resproto_handle
 
 static void grant(resset_t *rset)
 {
-	static resmsg_t msg = {0};
+    static resmsg_t msg = {0};
     if (handlers[1])  handlers[1](rset, &msg, NULL);
 }
 
 static void advice(resset_t *rset)
 {
-	static resmsg_t msg = {0};
+    static resmsg_t msg = {0};
     if (handlers[2])  handlers[2](rset, &msg, NULL);
 }
 
 static void disconnect(resset_t *rset)
 {
-	static resmsg_t msg = {0};
+    static resmsg_t msg = {0};
     if (handlers[0])  handlers[0](rset, &msg, NULL);
 }
