@@ -1,3 +1,9 @@
+libresource (0.2.0) unstable; urgency=low
+
+  * Added automated tests
+
+ -- Vsevolod Buzinov <ext-vsevolod.buzinov@nokia.com>  Wed, 24 Feb 2010 14:43:00 +0200
+
 libresource (0.1.0) unstable; urgency=low
 
   * Initial release
