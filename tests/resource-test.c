@@ -12,11 +12,11 @@ static void advice_callback (resource_set_t *resource_set,
 static void grant_callback (resource_set_t *resource_set,
                             uint32_t        resources,
                             void           *userdata);
-void simulate_server_response();
+static void simulate_server_response();
 
-static void grant(resset_t *rset);
-static void advice(resset_t *rset);
-static void disconnect(resset_t *rset);
+static void grant();
+static void advice();
+static void disconnect();
 
 START_TEST (test_resource_set_create_and_destroy)
 {
@@ -41,8 +41,8 @@ START_TEST (test_resource_set_configure_resources)
 	resource_set_t *rs;
 
 	fail_if(( rs = resource_set_create("player", RESOURCE_AUDIO_PLAYBACK, 0, 0, grant_callback, 0)) == NULL );
-	simulate_server_response();  // :TODO: investigate segfault
-	grant(rs);
+	simulate_server_response();
+	grant();
 	resource_set_configure_resources(rs, RESOURCE_VIDEO_PLAYBACK, RESOURCE_AUDIO_PLAYBACK);
 	simulate_server_response();
 	resource_set_destroy(rs);
@@ -69,12 +69,12 @@ START_TEST (test_resource_set_acquire_and_release)
 
 	rs = resource_set_create("player", RESOURCE_AUDIO_PLAYBACK, 0, 0, grant_callback, 0);
 	simulate_server_response();
-	advice(rs);
+	advice();
 	resource_set_acquire(rs);
 	simulate_server_response();
 	resource_set_release(rs);
 	simulate_server_response();
-	disconnect(rs);
+	disconnect();
 	resource_set_destroy(rs);
 	simulate_server_response();
 }
@@ -284,9 +284,13 @@ resset_t  *resconn_connect(resconn_t *connection, resmsg_t *message,
                            resproto_status_t callbackFunction)
 {
     resSet = (resset_t *) calloc(1, sizeof(resset_t));
+    resmsg_status_t *st;
 
     status_cb_fun = callbackFunction;
     last_message = message;
+    st = &last_message->status;
+    st->errcod = 0;
+    st->errmsg = "resconn_connect stub msg";
 
     return resSet;
 }
@@ -371,20 +375,23 @@ int resproto_set_handler(union resconn_u *r, resmsg_type_t type, resproto_handle
     return 1;
 }
 
-static void grant(resset_t *rset)
+static void grant()
 {
-    static resmsg_t msg = {0};
-    if (handlers[1])  handlers[1](rset, &msg, NULL);
+    static resmsg_t msg  = {0};
+    static resset_t rset = {0};
+    if (handlers[1])  handlers[1](&msg, &rset, NULL);
 }
 
-static void advice(resset_t *rset)
+static void advice()
 {
-    static resmsg_t msg = {0};
-    if (handlers[2])  handlers[2](rset, &msg, NULL);
+    static resmsg_t msg  = {0};
+    static resset_t rset = {0};
+    if (handlers[2])  handlers[2](&msg, &rset, NULL);
 }
 
-static void disconnect(resset_t *rset)
+static void disconnect()
 {
-    static resmsg_t msg = {0};
-    if (handlers[0])  handlers[0](rset, &msg, NULL);
+    static resmsg_t msg  = {0};
+    static resset_t rset = {0};
+    if (handlers[0])  handlers[0](&msg, &rset, NULL);
 }
