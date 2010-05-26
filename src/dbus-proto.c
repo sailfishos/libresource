@@ -652,6 +652,7 @@ static DBusHandlerResult client_method(DBusConnection *dcon,
                 if (!strcmp(name, rset->peer) && resmsg.any.id == rset->id) {
                     dbus_message_ref(dbusmsg);
                     rcon->dbus.receive(&resmsg, rset, dbusmsg);
+                    dbus_message_unref(dbusmsg);
                     return DBUS_HANDLER_RESULT_HANDLED;
                 }
             }
