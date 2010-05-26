@@ -176,6 +176,7 @@ EXPORT int resource_set_configure_advice_callback(resource_set_t      *rs,
         rs->advicecb.function = advcb;
         rs->advicecb.data = advdata;
     }
+    return TRUE;
 }
 
 
