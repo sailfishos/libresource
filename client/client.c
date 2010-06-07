@@ -29,6 +29,7 @@ typedef struct {
     uint32_t        mode;
     resmsg_rset_t   rset;
     int             verbose;
+    DBusBusType     bustype;
 } conf_t;
 
 typedef struct {
@@ -49,40 +50,41 @@ typedef struct {
     int             len;        /* buffer length */
 } input_t;
 
-static void     install_signal_handlers(void);
-static void     signal_handler(int, siginfo_t *, void *);
+static void         install_signal_handlers(void);
+static void         signal_handler(int, siginfo_t *, void *);
 
-static void     create_mainloop(void);
-static void     destroy_mainloop(void);
-static void     run_mainloop(void);
-static void     break_out_mainloop(void);
+static void         create_mainloop(void);
+static void         destroy_mainloop(void);
+static void         run_mainloop(void);
+static void         break_out_mainloop(void);
 
-static void     create_input(void);
-static void     destroy_input(void);
-static void     accept_input(int);
-static void     print_input(void);
-static void     parse_input(void);
-static gboolean input_cb(GIOChannel *, GIOCondition, gpointer);
+static void         create_input(void);
+static void         destroy_input(void);
+static void         accept_input(int);
+static void         print_input(void);
+static void         parse_input(void);
+static gboolean     input_cb(GIOChannel *, GIOCondition, gpointer);
 
-static void     create_dbus(void);
-static void     destroy_dbus(void);
+static void         create_dbus(void);
+static void         destroy_dbus(void);
 
-static void     create_manager(void);
-static void     destroy_manager();
-static void     connect_to_manager(resconn_t *);
-static void     disconnect_from_manager(void);
-static void     manager_status(resset_t *, resmsg_t *);
-static void     manager_receive_message(resmsg_t *, resset_t *, void *);
-static void     manager_send_message(resmsg_t *);
+static void         create_manager(void);
+static void         destroy_manager();
+static void         connect_to_manager(resconn_t *);
+static void         disconnect_from_manager(void);
+static void         manager_status(resset_t *, resmsg_t *);
+static void         manager_receive_message(resmsg_t *, resset_t *, void *);
+static void         manager_send_message(resmsg_t *);
 
-static void     print_error(char *, ...);
-static void     print_message(char *fmt, ...);
+static void         print_error(char *, ...);
+static void         print_message(char *fmt, ...);
 
-static void     usage(int);
-static void     parse_options(int, char **);
-static char    *parse_class_string(char *);
-static uint32_t parse_resource_list(char *, int);
-static uint32_t parse_mode_values(char *, int);
+static void         usage(int);
+static void         parse_options(int, char **);
+static char        *parse_class_string(char *);
+static uint32_t     parse_resource_list(char *, int);
+static uint32_t     parse_mode_values(char *, int);
+static DBusBusType  parse_bustype(char *, int);
 
 
 static char            *exe_name = "";
@@ -429,16 +431,24 @@ static gboolean input_cb(GIOChannel *ch, GIOCondition cond, gpointer data)
 
 static void create_dbus(void)
 {
-    DBusError err;
+    const char *busname;
+    DBusError   err;
+
+    switch (config.bustype) {
+    case DBUS_BUS_SYSTEM:    busname = "system";        break;
+    case DBUS_BUS_SESSION:   busname = "session";       break;
+    default:              /* should not come here */    exit(EINVAL);
+    }
+
 
     dbus_error_init(&err);
 
-    if ((dconn = dbus_bus_get(DBUS_BUS_SESSION, &err)) == NULL) {
-        print_error("Can't get session bus");
-    }
+    if ((dconn = dbus_bus_get(config.bustype, &err)) == NULL)
+        print_error("Can't get %s bus", busname);
 
     dbus_connection_setup_with_g_main(dconn, NULL);
-    
+
+    print_message("using D-Bus %s bus", busname);
 }
 
 static void destroy_dbus(void)
@@ -655,7 +665,7 @@ static void print_message(char *fmt, ...)
 
 static void usage(int exit_code)
 {
-    printf("usage: %s [-h] [-t] [-v] [-f mode-values]"
+    printf("usage: %s [-h] [-t] [-v] [-d bus-type] [-f mode-values]"
            "[-o optional-resources] [-s shared-resources -m shared-mask] "
            "class all-resources\n",
            exe_name);
@@ -663,6 +673,7 @@ static void usage(int exit_code)
     printf("\t  h\tprint this help message and exit\n");
     printf("\t  t\ttrace messages\n");
     printf("\t  v\tverbose printouts\n");
+    printf("\t  d\tbus-type. Either 'system' or 'session'\n");
     printf("\t  f\tmode values. See 'modes' below for the "
            "\n\t\tsyntax of <mode-values>\n");
     printf("\t  o\toptional resources. See 'resources' below for the "
@@ -712,13 +723,14 @@ static void parse_options(int argc, char **argv)
     config.trace = FALSE;
     config.id    = 1;
 
-    while ((option = getopt(argc, argv, "htvf:s:o:m:")) != -1) {
+    while ((option = getopt(argc, argv, "htvd:f:s:o:m:")) != -1) {
 
         switch (option) {
             
         case 'h':   usage(0);                                            break;
         case 't':   config.trace      = TRUE;                            break;
         case 'v':   config.verbose    = TRUE;                            break;
+        case 'd':   config.bustype    = parse_bustype(optarg, 1);        break;
         case 'f':   config.mode       = parse_mode_values(optarg, 1);    break;
         case 'o':   config.rset.opt   = parse_resource_list(optarg, 1);  break;
         case 's':   config.rset.share = parse_resource_list(optarg, 1);  break;
@@ -870,6 +882,23 @@ static uint32_t parse_mode_values(char *mval_str, int exit_if_error)
 
     return mode;
 }
+
+static DBusBusType parse_bustype(char *bustype_str, int exit_if_error)
+{
+    DBusBusType bustype = DBUS_BUS_SYSTEM;
+
+    if (!strcmp(bustype_str, "session"))
+        bustype = DBUS_BUS_SESSION;
+    else if (strcmp(bustype_str, "system")) {
+        print_message("invalid D-Bus type '%s'", bustype_str);
+
+        if (exit_if_error)
+            exit(EINVAL);
+    }
+
+    return bustype;
+}
+
 
 /*
  * Local Variables:
