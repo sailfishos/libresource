@@ -1,3 +1,9 @@
+libresource (0.4.0) unstable; urgency=low
+
+  * resource_client can use D-Bus system bus instead of session bus
+
+ -- Janos Kovacs <janos.f.kovacs@nokia.com>  Mon, 7 Jun 2010 11:50:00 +0300
+
 libresource (0.3.0) unstable; urgency=low
 
   * Update for automated tests
