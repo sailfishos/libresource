@@ -30,6 +30,7 @@ typedef struct {
     resmsg_rset_t   rset;
     int             verbose;
     DBusBusType     bustype;
+    int             allow_unknown;
 } conf_t;
 
 typedef struct {
@@ -665,7 +666,7 @@ static void print_message(char *fmt, ...)
 
 static void usage(int exit_code)
 {
-    printf("usage: %s [-h] [-t] [-v] [-d bus-type] [-f mode-values]"
+    printf("usage: %s [-h] [-t] [-v] [-u] [-d bus-type] [-f mode-values]"
            "[-o optional-resources] [-s shared-resources -m shared-mask] "
            "class all-resources\n",
            exe_name);
@@ -673,6 +674,7 @@ static void usage(int exit_code)
     printf("\t  h\tprint this help message and exit\n");
     printf("\t  t\ttrace messages\n");
     printf("\t  v\tverbose printouts\n");
+    printf("\t  u\tallow 'unknown' (ie. other than listed below) classes");
     printf("\t  d\tbus-type. Either 'system' or 'session'\n");
     printf("\t  f\tmode values. See 'modes' below for the "
            "\n\t\tsyntax of <mode-values>\n");
@@ -723,19 +725,20 @@ static void parse_options(int argc, char **argv)
     config.trace = FALSE;
     config.id    = 1;
 
-    while ((option = getopt(argc, argv, "htvd:f:s:o:m:")) != -1) {
+    while ((option = getopt(argc, argv, "htvud:f:s:o:m:")) != -1) {
 
         switch (option) {
             
-        case 'h':   usage(0);                                            break;
-        case 't':   config.trace      = TRUE;                            break;
-        case 'v':   config.verbose    = TRUE;                            break;
-        case 'd':   config.bustype    = parse_bustype(optarg, 1);        break;
-        case 'f':   config.mode       = parse_mode_values(optarg, 1);    break;
-        case 'o':   config.rset.opt   = parse_resource_list(optarg, 1);  break;
-        case 's':   config.rset.share = parse_resource_list(optarg, 1);  break;
-        case 'm':   config.rset.mask  = parse_resource_list(optarg, 1);  break;
-        default:    usage(EINVAL);                                       break;
+        case 'h': usage(0);                                              break;
+        case 't': config.trace         = TRUE;                           break;
+        case 'v': config.verbose       = TRUE;                           break;
+        case 'd': config.bustype       = parse_bustype(optarg, 1);       break;
+        case 'f': config.mode          = parse_mode_values(optarg, 1);   break;
+        case 'o': config.rset.opt      = parse_resource_list(optarg, 1); break;
+        case 's': config.rset.share    = parse_resource_list(optarg, 1); break;
+        case 'm': config.rset.mask     = parse_resource_list(optarg, 1); break;
+        case 'u': config.allow_unknown = TRUE;                           break;
+        default:  usage(EINVAL);                                         break;
         
         }
     }
@@ -770,7 +773,8 @@ static char *parse_class_string(char *str)
         strcmp(str, "game"      ) &&
         strcmp(str, "player"    ) &&
         strcmp(str, "event"     ) &&
-        strcmp(str, "background")   )
+        strcmp(str, "background") &&
+        !config.allow_unknown       )
    {
        print_error("invalid class '%s'", str);
    }
