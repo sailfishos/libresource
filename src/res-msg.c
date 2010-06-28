@@ -240,6 +240,7 @@ static char *flag_str(uint32_t flag)
     case RESMSG_SCALE_BUTTON:       str = "scale_button";      break;
     case RESMSG_SNAP_BUTTON:        str = "snap_button";       break;
     case RESMSG_LENS_COVER:         str = "lens_cover";        break;
+    case RESMSG_HEADSET_BUTTONS:    str = "lens_cover";        break;
     default:                        str = NULL;                break;
     }
 

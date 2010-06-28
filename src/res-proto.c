@@ -53,6 +53,7 @@ EXPORT int resproto_send_message(resset_t          *rset,
 {
     resconn_t       *rcon = rset->resconn;
     resmsg_type_t    type = resmsg->type;
+    resmsg_rset_t   *flags;
     int              success;
 
     if (rset->state != RESPROTO_RSET_STATE_CONNECTED ||
@@ -61,6 +62,12 @@ EXPORT int resproto_send_message(resset_t          *rset,
     else {
         resmsg->any.id = rset->id;
         success = rcon->any.send(rset, resmsg, status);
+
+        if (success && type == RESMSG_UPDATE) {
+            flags = &resmsg->record.rset;
+            resset_update_flags(rset, flags->all, flags->opt,
+                                flags->share, flags->mask);
+        }
     }
 
     return success;

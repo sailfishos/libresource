@@ -76,6 +76,21 @@ void resset_unref(resset_t *rset)
     }
 }
 
+void resset_update_flags(resset_t *rset,
+                         uint32_t  all,
+                         uint32_t  opt,
+                         uint32_t  share,
+                         uint32_t  mask)
+{
+    if (rset != NULL) {
+        rset->flags.all   = all;
+        rset->flags.opt   = opt;
+        rset->flags.share = share;
+        rset->flags.mask  = mask;
+    }
+}
+
+
 resset_t *resset_find(resconn_t *rcon, const char *peer, uint32_t id)
 {
     resset_t *rset;
