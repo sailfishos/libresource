@@ -103,6 +103,8 @@ struct resource_set_s {
 static resource_set_t *rslist;
 static uint32_t        rsid;
 static uint32_t        reqno;
+static DBusConnection *rsdbus;
+
 
 static DBusConnection *get_dbus(void);
 static resconn_t      *get_manager(DBusConnection *);
@@ -136,6 +138,25 @@ static request_t      *peek_request(resource_set_t *);
 static request_t      *pop_request(resource_set_t *, uint32_t);
 static void            destroy_request(request_t *);
 static void            resource_log(const char *, ...);
+
+
+EXPORT int resource_set_use_dbus(DBusConnection *conn)
+{
+    if (rslist != NULL) {
+        resource_log("refusing D-Bus connection change, has resource sets");
+        return FALSE;
+    }
+    
+    if (rsdbus != NULL) {
+        dbus_connection_unref(rsdbus);
+        rsdbus = NULL;
+    }
+    
+    if (conn != NULL)
+        rsdbus = dbus_connection_ref(conn);
+
+    return TRUE;
+}
 
 
 EXPORT resource_set_t *resource_set_create(const char          *klass,
@@ -296,15 +317,22 @@ static DBusConnection *get_dbus(void)
     DBusError err;
 
     if (dbus == NULL) {
+        if (rsdbus != NULL) {
+            dbus = rsdbus;
+            return dbus;
+        }
+        
         dbus_error_init(&err);
 
-        dbus = resource_get_dbus_bus(DBUS_BUS_SESSION, &err);
+        dbus = resource_get_dbus_bus(DBUS_BUS_SYSTEM, &err);
 
         if (dbus_error_is_set(&err)) {
             /* TODO: some more distinctive errno setting would not harm :) */
             errno = EIO;
             dbus_error_free(&err);
         }
+        else
+            rsdbus = dbus_connection_ref(dbus);
     }
 
     return dbus;

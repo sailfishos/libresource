@@ -27,6 +27,7 @@ USA.
 #include <sys/types.h>
 #include <res-types.h>
 
+#include <dbus/dbus.h>
 
 #ifdef	__cplusplus
 extern "C" {
@@ -39,6 +40,7 @@ typedef void (*resource_callback_t)(resource_set_t *resource_set,
                                     uint32_t        resources,
                                     void           *userdata);
 
+int resource_set_use_dbus(DBusConnection *conn);
 
 resource_set_t *resource_set_create(const char          *klass,
                                     uint32_t             mandatory,
