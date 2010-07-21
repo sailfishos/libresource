@@ -218,7 +218,10 @@ EXPORT int resource_set_configure_advice_callback(resource_set_t      *rs,
     if (rs != NULL) {
         rs->advicecb.function = advcb;
         rs->advicecb.data = advdata;
+        return TRUE;
     }
+    else
+        return FALSE;
 }
 
 
