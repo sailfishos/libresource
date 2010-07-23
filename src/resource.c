@@ -153,7 +153,7 @@ EXPORT int resource_set_use_dbus(DBusConnection *conn)
     }
     
     if (conn != NULL)
-        rsdbus = dbus_connection_ref(conn);
+        rsdbus = conn;
 
     return TRUE;
 }
@@ -335,7 +335,7 @@ static DBusConnection *get_dbus(void)
             dbus_error_free(&err);
         }
         else
-            rsdbus = dbus_connection_ref(dbus);
+            rsdbus = dbus;
     }
 
     return dbus;
