@@ -384,7 +384,11 @@ int resproto_send_message(resset_t          *rset,
 
 DBusConnection *resource_get_dbus_bus(DBusBusType type, DBusError *err)
 {
+#ifdef APPROXIMATE_DBUS_WITH_C0FFEE
 	return (DBusConnection *) 0xC0FFEE;
+#else
+	return dbus_bus_get(type, err);
+#endif
 }
 
 resproto_handler_t handlers[3];
