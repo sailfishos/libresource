@@ -210,6 +210,7 @@ static int send_message(resset_t *rset,resmsg_t *rmsg,resproto_status_t status)
             }
         }
 
+        dbus_message_set_no_reply(dmsg, !need_reply);
 
         if (!need_reply)
             success = dbus_connection_send(dcon, dmsg, NULL);
@@ -245,10 +246,15 @@ static int send_error(resset_t *rset, resmsg_t *resreply, void *data)
     DBusConnection *dcon      = rcon->dbus.conn; 
     DBusMessage    *dbusmsg   = (DBusMessage *)data;
     dbus_uint32_t   serial    = dbus_message_get_serial(dbusmsg);
-    DBusMessage    *dbusreply = resmsg_dbus_reply_message(dbusmsg, resreply);
+    dbus_bool_t     noreply   = dbus_message_get_no_reply(dbusmsg);
+    DBusMessage    *dbusreply;
 
-    dbus_connection_send(dcon, dbusreply, &serial);
-    dbus_message_unref(dbusreply);
+    if (!noreply) {
+        dbusreply = resmsg_dbus_reply_message(dbusmsg, resreply);
+        dbus_connection_send(dcon, dbusreply, &serial);
+        dbus_message_unref(dbusreply);
+    }
+
     dbus_message_unref(dbusmsg);
 
     return TRUE;

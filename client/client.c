@@ -120,6 +120,8 @@ static resset_t        *rset;
 static uint32_t         rid;
 static uint32_t         reqno; 
 static resmsg_type_t    reqtyp[REQHASH_DIM];
+static int              flood;
+static int              count;
 
 int main(int argc, char **argv)
 {
@@ -280,10 +282,21 @@ static void parse_input(void)
     char     *value;
     int       i;
     resmsg_t  msg;
+    char     *e;
 
 
     if (!strncmp(str, "help", 4)) {
         str = skip_whitespaces(str + 4);
+        print_message(
+            "   acquire\n"
+            "   release\n"
+            "   update all:opt:share:shmask where all,opt,share and shmask "
+                     "are comma separated resources\n"
+            "   audio group pid prop-name:prop-value\n"
+            "   disconnect\n"
+            "   flood count\n"
+            "   stop"
+        );
     }
     else if (!strncmp(str, "acquire", 7)) {
         str = skip_whitespaces(str + 7);
@@ -378,7 +391,30 @@ static void parse_input(void)
         } while (0);
     } 
     else if (!strncmp(str, "disconnect", 10)) {
+        str = skip_whitespaces(str + 10);
         disconnect_from_manager();
+    }
+    else if (!strncmp(str, "flood", 5)) {
+        str = skip_whitespaces(str + 5);
+        
+        flood = strtoul(str, &e, 10);
+
+        if (*e || flood < 1 || flood > 1000) {
+            if (*e || e == str)
+                print_message("invalid count '%s'", str);
+            else
+                print_message("invalid count %d: range is 1-1000", flood);
+            flood = count = 0;
+        }
+        else {
+            memset(&msg, 0, sizeof(resmsg_t));
+            msg.possess.type = RESMSG_ACQUIRE;
+            manager_send_message(&msg);
+        }
+    }
+    else if (!strncmp(str, "stop", 4)) {
+        str = skip_whitespaces(str + 4);
+        flood = count = 0;
     }
     else {
         print_message("invalid input '%s'", input.buf);
@@ -579,7 +615,8 @@ static void manager_status(resset_t *rset, resmsg_t *msg)
 
 static void manager_receive_message(resmsg_t *msg, resset_t *rs, void *data)
 {
-    char  buf[80];
+    resmsg_t  req;
+    char      buf[80];
 
     (void)data;
 
@@ -595,11 +632,31 @@ static void manager_receive_message(resmsg_t *msg, resset_t *rs, void *data)
 
         case RESMSG_GRANT:
             resmsg_res_str(msg->notify.resrc, buf, sizeof(buf));
-            if (config.verbose)
-                print_message("manager granted the resources: %s", buf);
-            else 
-                print_message("granted: %s", buf);
-            print_input();
+            if (!flood) {
+                if (config.verbose)
+                    print_message("manager granted the resources: %s", buf);
+                else
+                    print_message("granted: %s", buf);
+
+                print_input();
+            }
+            else {
+                memset(&req, 0, sizeof(resmsg_t));
+                if (msg->notify.resrc == 0)
+                    req.possess.type = RESMSG_ACQUIRE;
+                else {
+                    print_message("granted %d: %s", ++count, buf);
+
+                    if (count >= flood) {
+                        flood = count = 0;
+                        print_message("flood done");
+                        break;
+                    }
+
+                    req.possess.type = RESMSG_RELEASE;
+                }
+                manager_send_message(&req);
+            }
             break;
 
         case RESMSG_ADVICE:
