@@ -22,8 +22,6 @@ typedef void (*error_callback_function_t)(resource_set_t *resource_set,
                                           const char     *errmsg,
                                           void           *userdata);
 
-int resource_set_use_dbus(DBusConnection *conn);
-
 resource_set_t *resource_set_create(const char          *klass,
                                     uint32_t             mandatory,
                                     uint32_t             optional,

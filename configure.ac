@@ -56,6 +56,15 @@ esac],[debug=false])
 AM_CONDITIONAL([DEBUG], [test x$debug = xtrue])
 
 
+# check for aegis
+aegis_enabled="no"
+AC_CHECK_LIB(creds, creds_find, [AEGIS_CFLAGS="-DLIBRESOURCE_AEGIS";
+                                 AEGIS_LIBS="-lcreds";
+                                 aegis_enabled="yes"], 
+                                [AC_MSG_WARN([Building without aegis support])])
+AC_SUBST(AEGIS_CFLAGS)
+AC_SUBST(AEGIS_LIBS)
+
 AC_OUTPUT([
 	libresource0.pc
 	libresource0-glib.pc
@@ -74,4 +83,5 @@ echo "
 
     Debug enabled:          ${debug}
     With example:           ${have_dbus_glib}
+    Aegis enabled:          ${aegis_enabled}
 "

@@ -8,8 +8,9 @@
 #include "dbus-proto.h"
 #include "dbus-msg.h"
 
+#ifdef LIBRESOURCE_AEGIS
 #include <sys/creds.h>
-
+#endif
 
 /* 
  * local function prototypes
@@ -581,16 +582,17 @@ static DBusHandlerResult manager_method(DBusConnection *dcon,
     resset_t   *rset;
     char       *method;
 
-    char        creds_buf[200];
     int         has_creds = 1;
+    resmsg_t    reply;
+    int         success;
+#ifdef LIBRESOURCE_AEGIS
+    char        creds_buf[200];
     int         pid;
     creds_t     creds;
     int         res;
     const char *security_token = "Cellular";
     const char *name;
-    resmsg_t    reply;
-    int         success;
-
+#endif
 
     if (!strcmp(interface, RESPROTO_DBUS_MANAGER_INTERFACE) &&
         type == DBUS_MESSAGE_TYPE_METHOD_CALL               &&
@@ -626,7 +628,7 @@ static DBusHandlerResult manager_method(DBusConnection *dcon,
                                      resmsg.record.rset.share,
                                      resmsg.record.rset.mask);
 
-
+#ifdef LIBRESOURCE_AEGIS
                 printf("resmsg.record.klass: %s\n", resmsg.record.klass);
                 if (!strcmp(resmsg.record.klass, "call")) {
 
@@ -676,7 +678,7 @@ static DBusHandlerResult manager_method(DBusConnection *dcon,
 
                     creds_free(creds);
                 }
-
+#endif
 
 
                 if (rset != NULL && watch_client(&rcon->dbus, sender, TRUE)) {
