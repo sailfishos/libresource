@@ -9,6 +9,9 @@
       <case name="resource_set_acquire_and_release"       type="Functional" level="Component" subfeature="High-level C API" description="resource_set_acquire_and_release"       timeout="15"><step expected_result="0">/usr/lib/libresource-tests/resource_test 4</step></case>
       <case name="resource_set_configure_audio"           type="Functional" level="Component" subfeature="High-level C API" description="resource_set_configure_audio"           timeout="15"><step expected_result="0">/usr/lib/libresource-tests/resource_test 5</step></case>
 
+      <case name="security_test_with_token"               type="Functional" level="Component" subfeature="High-level C API" description="security_test_with_token"               timeout="15"><step expected_result="0">/usr/lib/libresource-tests/test-security-with-aegis-token</step></case>
+      <case name="security_test_without_token"            type="Functional" level="Component" subfeature="High-level C API" description="security_test_without_token"            timeout="15"><step expected_result="1">/usr/lib/libresource-tests/test-security-without-aegis-token</step></case>
+
       <environments>
         <scratchbox>true</scratchbox>
         <hardware>true</hardware>    

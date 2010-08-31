@@ -17,6 +17,12 @@ typedef void (*resource_callback_t)(resource_set_t *resource_set,
                                     uint32_t        resources,
                                     void           *userdata);
 
+typedef void (*error_callback_function_t)(resource_set_t *resource_set,
+                                          uint32_t        errcod,
+                                          const char     *errmsg,
+                                          void           *userdata);
+
+int resource_set_use_dbus(DBusConnection *conn);
 
 resource_set_t *resource_set_create(const char          *klass,
                                     uint32_t             mandatory,
@@ -30,6 +36,10 @@ void resource_set_destroy(resource_set_t *resource_set);
 int  resource_set_configure_advice_callback(resource_set_t      *resource_set,
                                             resource_callback_t  advicecb,
                                             void                *advicedata);
+
+int resource_set_configure_error_callback(resource_set_t             *rs,
+                                          error_callback_function_t  errorcb,
+                                          void                      *errordata);
 
 int  resource_set_configure_resources(resource_set_t *resource_set,
                                       uint32_t        mandatory,

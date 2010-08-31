@@ -8,6 +8,8 @@
 #include "dbus-proto.h"
 #include "dbus-msg.h"
 
+#include <sys/creds.h>
+
 
 /* 
  * local function prototypes
@@ -579,6 +581,16 @@ static DBusHandlerResult manager_method(DBusConnection *dcon,
     resset_t   *rset;
     char       *method;
 
+    char        creds_buf[200];
+    int         has_creds = 1;
+    int         pid;
+    creds_t     creds;
+    int         res;
+    const char *security_token = "Cellular";
+    const char *name;
+    resmsg_t    reply;
+    int         success;
+
 
     if (!strcmp(interface, RESPROTO_DBUS_MANAGER_INTERFACE) &&
         type == DBUS_MESSAGE_TYPE_METHOD_CALL               &&
@@ -604,6 +616,7 @@ static DBusHandlerResult manager_method(DBusConnection *dcon,
 
 
             if (resmsg.type == RESMSG_REGISTER) {
+
                 rset = resset_create(rcon, sender, resmsg.any.id,
                                      RESPROTO_RSET_STATE_CONNECTED,
                                      resmsg.record.klass,
@@ -613,15 +626,84 @@ static DBusHandlerResult manager_method(DBusConnection *dcon,
                                      resmsg.record.rset.share,
                                      resmsg.record.rset.mask);
 
+
+                printf("resmsg.record.klass: %s\n", resmsg.record.klass);
+                if (!strcmp(resmsg.record.klass, "call")) {
+
+                    printf("checking credentials\n");
+
+
+                    DBusMessage *message;
+                    DBusMessage *reply;
+                    DBusMessageIter iter;
+                    DBusError error;
+
+                    message = dbus_message_new_method_call ("org.freedesktop.DBus",
+                                                  "/org/freedesktop/DBus/Bus",
+                                                  "org.freedesktop.DBus",
+                                                  "GetConnectionUnixProcessID");
+                    dbus_message_iter_init_append (message, &iter);
+                    name = dbus_message_get_sender(dbusmsg);
+                    dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &name);
+                    dbus_error_init (&error);
+                    reply = dbus_connection_send_with_reply_and_block (dcon, message, -1, &error);
+                    if (reply == NULL || dbus_error_is_set (&error)) {
+                          printf("Error doing GetConnectionUnixProcessID on Bus: %s: %s\n", error.name, error.message);
+                          dbus_message_unref (message);
+                          if (reply != NULL)
+                                dbus_message_unref (reply);
+                          goto error;
+                    }
+                    dbus_message_iter_init (reply, &iter);
+                    dbus_message_iter_get_basic (&iter, &pid);
+                    dbus_message_unref (message);
+                    dbus_message_unref (reply);
+
+
+                    printf("pid is %d\n", pid);
+
+                    creds = creds_gettask(pid);
+
+                    res = creds_find(creds, security_token, creds_buf, sizeof(creds_buf));
+                    if (res < 0) {
+                        printf("creds_find failed %d with match %s\n", res, security_token);
+                        has_creds = 0;
+                    } else if (res >= sizeof(creds_buf)) {
+                        printf("creds_find failed -- buf too short for %.*s\n", sizeof(creds_buf), creds_buf);
+                    } else {
+                        printf("creds_find matched: %s\n", creds_buf);
+                    }
+
+                    creds_free(creds);
+                }
+
+
+
                 if (rset != NULL && watch_client(&rcon->dbus, sender, TRUE)) {
                     dbus_message_ref(dbusmsg);
-                    rcon->dbus.receive(&resmsg, rset, dbusmsg);
+
+                    if (has_creds) {
+                      rcon->dbus.receive(&resmsg, rset, dbusmsg);
+                    } else {
+
+                      memset(&reply, 0, sizeof(reply));
+                      reply.status.type   = RESMSG_STATUS;
+                      reply.status.id     = rset->id;
+                      reply.status.reqno  = resmsg.any.reqno;
+                      reply.status.errcod = 401;
+                      reply.status.errmsg = "Access denied";
+
+                      success = rcon->dbus.error(rset, &reply, dbusmsg);
+                      printf("3\n");
+                    }
                 }
-                    
+
                 return DBUS_HANDLER_RESULT_HANDLED;
             }
         }
     }
+
+error:
 
     return DBUS_HANDLER_RESULT_HANDLED;
 }

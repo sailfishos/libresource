@@ -58,6 +58,11 @@ typedef struct {
     void                    *data;
 } callback_t;
 
+typedef struct {
+    error_callback_function_t  function;
+    void                      *data;
+} error_callback_t;
+
 struct resource_set_s {
     struct resource_set_s   *next;
     DBusConnection          *dbus;       /* D-Bus connection */
@@ -73,6 +78,7 @@ struct resource_set_s {
     int                      acquire;
     callback_t               grantcb;
     callback_t               advicecb;
+    error_callback_t         errorcb;
     resource_config_t       *configs;
     resset_t                *resset;
     request_t               *reqlist;
@@ -177,6 +183,19 @@ EXPORT int resource_set_configure_advice_callback(resource_set_t      *rs,
         rs->advicecb.data = advdata;
     }
     return TRUE;
+}
+
+EXPORT int resource_set_configure_error_callback(resource_set_t            *rs,
+                                                 error_callback_function_t  errorcb,
+                                                 void                      *errordata)
+{
+    if (rs != NULL) {
+        rs->errorcb.function = errorcb;
+        rs->errorcb.data = errordata;
+        return TRUE;
+    }
+    else
+        return FALSE;
 }
 
 
@@ -535,6 +554,10 @@ static void connect_complete_cb(resource_set_t *rs, uint32_t rn, void *data,
         resource_log("failed to connect resource manager: %d %s",
                      errcod, errmsg);
         rs->client = client_created;
+
+        if (rs->errorcb.function != NULL)
+          rs->errorcb.function(rs, errcod, errmsg, rs->errorcb.data);
+
     }
     else {
         resource_log("resource set %u is ready", rs->id);
