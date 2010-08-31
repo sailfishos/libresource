@@ -1,3 +1,25 @@
+/*************************************************************************
+This file is part of libresource
+
+Copyright (C) 2010 Nokia Corporation.
+
+This library is free software; you can redistribute
+it and/or modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation
+version 2.1 of the License.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301
+USA.
+*************************************************************************/
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -53,6 +75,7 @@ EXPORT int resproto_send_message(resset_t          *rset,
 {
     resconn_t       *rcon = rset->resconn;
     resmsg_type_t    type = resmsg->type;
+    resmsg_rset_t   *flags;
     int              success;
 
     if (rset->state != RESPROTO_RSET_STATE_CONNECTED ||
@@ -61,6 +84,12 @@ EXPORT int resproto_send_message(resset_t          *rset,
     else {
         resmsg->any.id = rset->id;
         success = rcon->any.send(rset, resmsg, status);
+
+        if (success && type == RESMSG_UPDATE) {
+            flags = &resmsg->record.rset;
+            resset_update_flags(rset, flags->all, flags->opt,
+                                flags->share, flags->mask);
+        }
     }
 
     return success;

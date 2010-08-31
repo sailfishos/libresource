@@ -1,3 +1,25 @@
+/*************************************************************************
+This file is part of libresource
+
+Copyright (C) 2010 Nokia Corporation.
+
+This library is free software; you can redistribute
+it and/or modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation
+version 2.1 of the License.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301
+USA.
+*************************************************************************/
+
+
 #ifndef __RES_TYPES_H__
 #define __RES_TYPES_H__
 
@@ -20,6 +42,7 @@ typedef enum {
     resource_scale_button    = 10,
     resource_snap_button     = 11,
     resource_lens_cover      = 12,
+    resource_headset_buttons = 13,
 } resource_type_t;
 
 
@@ -35,6 +58,7 @@ typedef enum {
 #define RESOURCE_SCALE_BUTTON     RESOURCE_BIT( resource_scale_button )
 #define RESOURCE_SNAP_BUTTON      RESOURCE_BIT( resource_snap_button )
 #define RESOURCE_LENS_COVER       RESOURCE_BIT( resource_lens_cover )
+#define RESOURCE_HEADSET_BUTTONS  RESOURCE_BIT( resource_headset_buttons )
 
 typedef enum {
   resource_auto_release = 0,

@@ -1,3 +1,25 @@
+/*************************************************************************
+This file is part of libresource
+
+Copyright (C) 2010 Nokia Corporation.
+
+This library is free software; you can redistribute
+it and/or modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation
+version 2.1 of the License.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301
+USA.
+*************************************************************************/
+
+
 #ifndef __LIB_RESOURCE_H__
 #define __LIB_RESOURCE_H__
 
@@ -5,6 +27,7 @@
 #include <sys/types.h>
 #include <res-types.h>
 
+#include <dbus/dbus.h>
 
 #ifdef	__cplusplus
 extern "C" {
@@ -17,10 +40,13 @@ typedef void (*resource_callback_t)(resource_set_t *resource_set,
                                     uint32_t        resources,
                                     void           *userdata);
 
+
 typedef void (*error_callback_function_t)(resource_set_t *resource_set,
                                           uint32_t        errcod,
                                           const char     *errmsg,
                                           void           *userdata);
+
+int resource_set_use_dbus(DBusConnection *conn);
 
 resource_set_t *resource_set_create(const char          *klass,
                                     uint32_t             mandatory,

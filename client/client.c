@@ -1,3 +1,25 @@
+/*************************************************************************
+This file is part of libresource
+
+Copyright (C) 2010 Nokia Corporation.
+
+This library is free software; you can redistribute
+it and/or modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation
+version 2.1 of the License.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301
+USA.
+*************************************************************************/
+
+
 #include <signal.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -30,6 +52,7 @@ typedef struct {
     resmsg_rset_t   rset;
     int             verbose;
     DBusBusType     bustype;
+    int             allow_unknown;
 } conf_t;
 
 typedef struct {
@@ -97,6 +120,8 @@ static resset_t        *rset;
 static uint32_t         rid;
 static uint32_t         reqno; 
 static resmsg_type_t    reqtyp[REQHASH_DIM];
+static int              flood;
+static int              count;
 
 int main(int argc, char **argv)
 {
@@ -257,10 +282,21 @@ static void parse_input(void)
     char     *value;
     int       i;
     resmsg_t  msg;
+    char     *e;
 
 
     if (!strncmp(str, "help", 4)) {
         str = skip_whitespaces(str + 4);
+        print_message(
+            "   acquire\n"
+            "   release\n"
+            "   update all:opt:share:shmask where all,opt,share and shmask "
+                     "are comma separated resources\n"
+            "   audio group pid prop-name:prop-value\n"
+            "   disconnect\n"
+            "   flood count\n"
+            "   stop"
+        );
     }
     else if (!strncmp(str, "acquire", 7)) {
         str = skip_whitespaces(str + 7);
@@ -355,7 +391,30 @@ static void parse_input(void)
         } while (0);
     } 
     else if (!strncmp(str, "disconnect", 10)) {
+        str = skip_whitespaces(str + 10);
         disconnect_from_manager();
+    }
+    else if (!strncmp(str, "flood", 5)) {
+        str = skip_whitespaces(str + 5);
+        
+        flood = strtoul(str, &e, 10);
+
+        if (*e || flood < 1 || flood > 1000) {
+            if (*e || e == str)
+                print_message("invalid count '%s'", str);
+            else
+                print_message("invalid count %d: range is 1-1000", flood);
+            flood = count = 0;
+        }
+        else {
+            memset(&msg, 0, sizeof(resmsg_t));
+            msg.possess.type = RESMSG_ACQUIRE;
+            manager_send_message(&msg);
+        }
+    }
+    else if (!strncmp(str, "stop", 4)) {
+        str = skip_whitespaces(str + 4);
+        flood = count = 0;
     }
     else {
         print_message("invalid input '%s'", input.buf);
@@ -556,7 +615,8 @@ static void manager_status(resset_t *rset, resmsg_t *msg)
 
 static void manager_receive_message(resmsg_t *msg, resset_t *rs, void *data)
 {
-    char  buf[80];
+    resmsg_t  req;
+    char      buf[80];
 
     (void)data;
 
@@ -572,11 +632,31 @@ static void manager_receive_message(resmsg_t *msg, resset_t *rs, void *data)
 
         case RESMSG_GRANT:
             resmsg_res_str(msg->notify.resrc, buf, sizeof(buf));
-            if (config.verbose)
-                print_message("manager granted the resources: %s", buf);
-            else 
-                print_message("granted: %s", buf);
-            print_input();
+            if (!flood) {
+                if (config.verbose)
+                    print_message("manager granted the resources: %s", buf);
+                else
+                    print_message("granted: %s", buf);
+
+                print_input();
+            }
+            else {
+                memset(&req, 0, sizeof(resmsg_t));
+                if (msg->notify.resrc == 0)
+                    req.possess.type = RESMSG_ACQUIRE;
+                else {
+                    print_message("granted %d: %s", ++count, buf);
+
+                    if (count >= flood) {
+                        flood = count = 0;
+                        print_message("flood done");
+                        break;
+                    }
+
+                    req.possess.type = RESMSG_RELEASE;
+                }
+                manager_send_message(&req);
+            }
             break;
 
         case RESMSG_ADVICE:
@@ -665,7 +745,7 @@ static void print_message(char *fmt, ...)
 
 static void usage(int exit_code)
 {
-    printf("usage: %s [-h] [-t] [-v] [-d bus-type] [-f mode-values]"
+    printf("usage: %s [-h] [-t] [-v] [-u] [-d bus-type] [-f mode-values]"
            "[-o optional-resources] [-s shared-resources -m shared-mask] "
            "class all-resources\n",
            exe_name);
@@ -673,6 +753,7 @@ static void usage(int exit_code)
     printf("\t  h\tprint this help message and exit\n");
     printf("\t  t\ttrace messages\n");
     printf("\t  v\tverbose printouts\n");
+    printf("\t  u\tallow 'unknown' (ie. other than listed below) classes");
     printf("\t  d\tbus-type. Either 'system' or 'session'\n");
     printf("\t  f\tmode values. See 'modes' below for the "
            "\n\t\tsyntax of <mode-values>\n");
@@ -684,6 +765,7 @@ static void usage(int exit_code)
            "syntax of\n\t\t<shared-mask>\n");
     printf("\tclass:\n");
     printf("\t\tcall\t  - for native or 3rd party telephony\n");
+    printf("\t\tvideoeditor\t  - for video editing/MMS\n");
     printf("\t\tcamera\t  - for photo applications\n");
     printf("\t\tringtone  - for ringtones\n");
     printf("\t\talarm\t  - for alarm clock\n");
@@ -706,10 +788,12 @@ static void usage(int exit_code)
     printf("\t\tScaleButton\n");
     printf("\t\tSnapButton\n");
     printf("\t\tLensCover\n");
+    printf("\t\tHeadsetButtons\n");
     printf("\t  no whitespace allowed in the resource list.\n");
     printf("\tmodes:\n");
-    printf("\t  comma separated lis of the following modes\n");
+    printf("\t  comma separated list of the following modes\n");
     printf("\t\tAutoRelease\n");
+    printf("\t\tAlwaysReply\n");
 
     exit(exit_code);
 }
@@ -723,19 +807,20 @@ static void parse_options(int argc, char **argv)
     config.trace = FALSE;
     config.id    = 1;
 
-    while ((option = getopt(argc, argv, "htvd:f:s:o:m:")) != -1) {
+    while ((option = getopt(argc, argv, "htvud:f:s:o:m:")) != -1) {
 
         switch (option) {
             
-        case 'h':   usage(0);                                            break;
-        case 't':   config.trace      = TRUE;                            break;
-        case 'v':   config.verbose    = TRUE;                            break;
-        case 'd':   config.bustype    = parse_bustype(optarg, 1);        break;
-        case 'f':   config.mode       = parse_mode_values(optarg, 1);    break;
-        case 'o':   config.rset.opt   = parse_resource_list(optarg, 1);  break;
-        case 's':   config.rset.share = parse_resource_list(optarg, 1);  break;
-        case 'm':   config.rset.mask  = parse_resource_list(optarg, 1);  break;
-        default:    usage(EINVAL);                                       break;
+        case 'h': usage(0);                                              break;
+        case 't': config.trace         = TRUE;                           break;
+        case 'v': config.verbose       = TRUE;                           break;
+        case 'd': config.bustype       = parse_bustype(optarg, 1);       break;
+        case 'f': config.mode          = parse_mode_values(optarg, 1);   break;
+        case 'o': config.rset.opt      = parse_resource_list(optarg, 1); break;
+        case 's': config.rset.share    = parse_resource_list(optarg, 1); break;
+        case 'm': config.rset.mask     = parse_resource_list(optarg, 1); break;
+        case 'u': config.allow_unknown = TRUE;                           break;
+        default:  usage(EINVAL);                                         break;
         
         }
     }
@@ -762,15 +847,17 @@ static void parse_options(int argc, char **argv)
 
 static char *parse_class_string(char *str)
 {
-    if (strcmp(str, "call"      ) &&
-        strcmp(str, "camera"    ) &&
-        strcmp(str, "ringtone"  ) &&
-        strcmp(str, "alarm"     ) &&
-        strcmp(str, "navigator" ) &&
-        strcmp(str, "game"      ) &&
-        strcmp(str, "player"    ) &&
-        strcmp(str, "event"     ) &&
-        strcmp(str, "background")   )
+    if (strcmp(str, "call"       ) &&
+        strcmp(str, "camera"     ) &&
+        strcmp(str, "ringtone"   ) &&
+        strcmp(str, "alarm"      ) &&
+        strcmp(str, "navigator"  ) &&
+        strcmp(str, "game"       ) &&
+        strcmp(str, "player"     ) &&
+        strcmp(str, "event"      ) &&
+        strcmp(str, "background" ) &&
+        strcmp(str, "videoeditor") &&
+        !config.allow_unknown       )
    {
        print_error("invalid class '%s'", str);
    }
@@ -793,6 +880,7 @@ static uint32_t parse_resource_list(char *rlist_str, int exit_if_error)
         { RESMSG_SCALE_BUTTON   ,  "ScaleButton"    },
         { RESMSG_SNAP_BUTTON    ,  "SnapButton"     },
         { RESMSG_LENS_COVER     ,  "LensCover"      },
+        { RESMSG_HEADSET_BUTTONS,  "HeadsetButtons" },
         {           0           ,       NULL        }
     };
 
@@ -840,6 +928,7 @@ static uint32_t parse_mode_values(char *mval_str, int exit_if_error)
 {
     static rdef_t  mdef[] = {
         { RESMSG_MODE_AUTO_RELEASE ,  "AutoRelease"  },
+        { RESMSG_MODE_ALWAYS_REPLY ,  "AlwaysReply"  },
         {             0            ,       NULL      }
     };
 
