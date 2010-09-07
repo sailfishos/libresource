@@ -4,11 +4,11 @@ lib_LTLIBRARIES = libresource.la libresource-glib.la
 libresource_la_SOURCES = res-msg.c res-conn.c res-proto.c res-set.c \
                          dbus-proto.c dbus-msg.c \
                          internal-proto.c internal-msg.c
-libresource_la_CFLAGS = @DBUS_CFLAGS@ @AEGIS_CFLAGS@ -I$(top_srcdir) -fvisibility=hidden
+libresource_la_CFLAGS = @DBUS_CFLAGS@ -I$(top_srcdir) -fvisibility=hidden
 if DEBUG
 libresource_la_CFLAGS += -D__DEBUG__
 endif
-libresource_la_LDFLAGS = /usr/lib -version-info $(subst .,:,$(VERSION)) @AEGIS_LIBS@
+libresource_la_LDFLAGS = /usr/lib -version-info $(subst .,:,$(VERSION))
 libresource_la_LIBADD = @DBUS_LIBS@
 
 libresource_glib_la_SOURCES = resource.c resource-glib-glue.c
