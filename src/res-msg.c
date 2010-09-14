@@ -250,20 +250,20 @@ static char *flag_str(uint32_t flag)
     char *str;
 
     switch (flag) {
-    case RESMSG_AUDIO_PLAYBACK:     str = "audio_playback";    break;
-    case RESMSG_VIDEO_PLAYBACK:     str = "video_playback";    break;
-    case RESMSG_AUDIO_RECORDING:    str = "audio_recording";   break;
-    case RESMSG_VIDEO_RECORDING:    str = "video_recording";   break;
-    case RESMSG_VIBRA:              str = "vibra";             break;
-    case RESMSG_LEDS:               str = "leds";              break;
-    case RESMSG_BACKLIGHT:          str = "backlight";         break;
-    case RESMSG_SYSTEM_BUTTON:      str = "system_button";     break;
-    case RESMSG_LOCK_BUTTON:        str = "lock_button";       break;
-    case RESMSG_SCALE_BUTTON:       str = "scale_button";      break;
-    case RESMSG_SNAP_BUTTON:        str = "snap_button";       break;
-    case RESMSG_LENS_COVER:         str = "lens_cover";        break;
-    case RESMSG_HEADSET_BUTTONS:    str = "lens_cover";        break;
-    default:                        str = NULL;                break;
+    case RESMSG_AUDIO_PLAYBACK:     str = "AudioPlayback";    break;
+    case RESMSG_VIDEO_PLAYBACK:     str = "VideoPlayback";    break;
+    case RESMSG_AUDIO_RECORDING:    str = "AudioRecording";   break;
+    case RESMSG_VIDEO_RECORDING:    str = "VideoRecording";   break;
+    case RESMSG_VIBRA:              str = "Vibra";            break;
+    case RESMSG_LEDS:               str = "Leds";             break;
+    case RESMSG_BACKLIGHT:          str = "Backlight";        break;
+    case RESMSG_SYSTEM_BUTTON:      str = "SystemButton";     break;
+    case RESMSG_LOCK_BUTTON:        str = "LockButton";       break;
+    case RESMSG_SCALE_BUTTON:       str = "ScaleButton";      break;
+    case RESMSG_SNAP_BUTTON:        str = "SnapButton";       break;
+    case RESMSG_LENS_COVER:         str = "LensCover";        break;
+    case RESMSG_HEADSET_BUTTONS:    str = "HeadsetButtons";   break;
+    default:                        str = NULL;               break;
     }
 
     return str;
