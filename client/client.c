@@ -38,6 +38,8 @@ USA.
 
 #include <res-conn.h>
 
+#include "time-stat.h"
+
 #define REQHASH_BITS     6
 #define REQHASH_DIM      (1 << REQHASH_BITS)
 #define REQHASH_MASK     (REQHASH_DIM - 1)
@@ -109,7 +111,6 @@ static uint32_t     parse_resource_list(char *, int);
 static uint32_t     parse_mode_values(char *, int);
 static DBusBusType  parse_bustype(char *, int);
 
-
 static char            *exe_name = "";
 static conf_t           config;
 static GMainLoop       *main_loop;
@@ -122,6 +123,8 @@ static uint32_t         reqno;
 static resmsg_type_t    reqtyp[REQHASH_DIM];
 static int              flood;
 static int              count;
+
+static int              active_timer = 0;
 
 int main(int argc, char **argv)
 {
@@ -556,6 +559,7 @@ static void connect_to_manager(resconn_t *rc)
     resmsg.record.klass      = config.klass;
     resmsg.record.mode       = config.mode;
 
+    active_timer = start_timer();
     rset = resconn_connect(rc, &resmsg, manager_status);
 
     index = REQHASH_INDEX(reqno);
@@ -593,12 +597,20 @@ static void manager_status(resset_t *rset, resmsg_t *msg)
             str = resmsg_type_str(reqtyp[idx]);
             print_message("%s request failed (%d): %s",
                           str, msg->status.errcod, msg->status.errmsg);
+            reqtyp[idx] = RESMSG_INVALID;
             print_input();
         }
         else {
             switch (type) {
             case RESMSG_REGISTER:
                 accept_input(TRUE);
+                if (active_timer) {
+                    long int time = 0;
+                    time = stop_timer();
+                    active_timer = 0;
+                    print_message("Register took %ldms", time);
+                }
+                reqtyp[idx] = RESMSG_INVALID;
                 break;
             case RESMSG_UNREGISTER:
                 accept_input(FALSE);
@@ -608,8 +620,6 @@ static void manager_status(resset_t *rset, resmsg_t *msg)
                 break;
             }
         }
-
-        reqtyp[idx] = RESMSG_INVALID;
     }
 }
 
@@ -619,6 +629,13 @@ static void manager_receive_message(resmsg_t *msg, resset_t *rs, void *data)
     char      buf[80];
 
     (void)data;
+
+    if (active_timer) {
+        long int time = 0;
+        time = stop_timer();
+        active_timer = 0;
+        print_message("Operation took %ldms", time);
+    }
 
     if (rs != rset)
         print_error("%s(): got confused with data structures", __FUNCTION__);
@@ -633,10 +650,33 @@ static void manager_receive_message(resmsg_t *msg, resset_t *rs, void *data)
         case RESMSG_GRANT:
             resmsg_res_str(msg->notify.resrc, buf, sizeof(buf));
             if (!flood) {
-                if (config.verbose)
-                    print_message("manager granted the resources: %s", buf);
-                else
-                    print_message("granted: %s", buf);
+                if (config.trace && (msg->notify.resrc == 0x0)) {
+                    resmsg_res_str(rset->flags.all, buf, sizeof(buf));
+                    int index;
+                    index = REQHASH_INDEX(msg->notify.reqno);
+
+                    /* lost or denied */
+                    if(reqtyp[index] == RESMSG_INVALID) {
+                        /* server initiated message */
+                        print_message("lost: %s", buf);
+                    }
+                    else if(reqtyp[index] == RESMSG_ACQUIRE) {
+                        print_message("denied: %s", buf);
+                    }
+                    else if(reqtyp[index] == RESMSG_RELEASE) {
+                        print_message("released: %s", buf);
+                    }
+                    else {
+                        print_message("granted: %s", buf);
+                    }
+                    reqtyp[index] = RESMSG_INVALID;
+                }
+                else {
+                    if (config.verbose)
+                        print_message("manager granted the resources: %s", buf);
+                    else
+                        print_message("granted: %s", buf);
+                }
 
                 print_input();
             }
@@ -695,10 +735,15 @@ static void manager_send_message(resmsg_t *msg)
     index = REQHASH_INDEX(msg->any.reqno);
     reqtyp[index] = msg->type;
 
+    active_timer = start_timer();
     success = resproto_send_message(rset, msg, manager_status);
 
-    if (!success) 
+    if (!success) {
         print_message("failed to send %s request", resmsg_type_str(msg->type));
+        active_timer = 0;
+        stop_timer();
+    }
+
 }
 
 
@@ -753,7 +798,7 @@ static void usage(int exit_code)
     printf("\t  h\tprint this help message and exit\n");
     printf("\t  t\ttrace messages\n");
     printf("\t  v\tverbose printouts\n");
-    printf("\t  u\tallow 'unknown' (ie. other than listed below) classes");
+    printf("\t  u\tallow 'unknown' (ie. other than listed below) classes\n");
     printf("\t  d\tbus-type. Either 'system' or 'session'\n");
     printf("\t  f\tmode values. See 'modes' below for the "
            "\n\t\tsyntax of <mode-values>\n");
@@ -806,6 +851,7 @@ static void parse_options(int argc, char **argv)
 
     config.trace = FALSE;
     config.id    = 1;
+    config.bustype = DBUS_BUS_SYSTEM;
 
     while ((option = getopt(argc, argv, "htvud:f:s:o:m:")) != -1) {
 
