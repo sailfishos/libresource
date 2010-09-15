@@ -260,7 +260,7 @@ static void accept_input(int accept)
 static void print_input(void)
 {
     if (input.accept) {
-        printf(">%s", input.buf);
+        printf("resource> %s", input.buf);
         fflush(stdout);
     }
 }
@@ -418,6 +418,11 @@ static void parse_input(void)
     else if (!strncmp(str, "stop", 4)) {
         str = skip_whitespaces(str + 4);
         flood = count = 0;
+    }
+    else if ((!strncmp(str, "quit", 4)) || (!strncmp(str, "exit", 4))) {
+        g_main_loop_quit(main_loop);
+        input.accept = 0;
+        return;
     }
     else {
         print_message("invalid input '%s'", input.buf);
