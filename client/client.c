@@ -814,15 +814,16 @@ static void usage(int exit_code)
     printf("\t  m\tshared resource mask. See 'resources' below for the "
            "syntax of\n\t\t<shared-mask>\n");
     printf("\tclass:\n");
-    printf("\t\tcall\t  - for native or 3rd party telephony\n");
-    printf("\t\tvideoeditor\t  - for video editing/MMS\n");
-    printf("\t\tcamera\t  - for photo applications\n");
-    printf("\t\tringtone  - for ringtones\n");
-    printf("\t\talarm\t  - for alarm clock\n");
-    printf("\t\tnavigator - for mapping applications\n");
-    printf("\t\tgame\t  - for gaming\n");
-    printf("\t\tplayer\t  - for media playback/recording\n");
-    printf("\t\tevent\t  - for messaging and other event notifications\n");
+    printf("\t\tproclaimer - for always audible announcements\n");
+    printf("\t\tnavigator  - for mapping applications\n");
+    printf("\t\tcall\t   - for native or 3rd party telephony\n");
+    printf("\t\tvideoeditor- for video editing/MMS\n");
+    printf("\t\tcamera\t   - for photo applications\n");
+    printf("\t\tringtone   - for ringtones\n");
+    printf("\t\talarm\t   - for alarm clock\n");
+    printf("\t\tgame\t   - for gaming\n");
+    printf("\t\tplayer\t   - for media playback/recording\n");
+    printf("\t\tevent\t   - for messaging and other event notifications\n");
     printf("\t\tbackground - for thumbnailing etc\n");
     printf("\tresources:\n");
     printf("\t  comma separated list of the following resources\n");
@@ -898,11 +899,12 @@ static void parse_options(int argc, char **argv)
 
 static char *parse_class_string(char *str)
 {
-    if (strcmp(str, "call"       ) &&
+    if (strcmp(str, "proclaimer" ) &&
+        strcmp(str, "navigator"  ) &&
+        strcmp(str, "call"       ) &&
         strcmp(str, "camera"     ) &&
         strcmp(str, "ringtone"   ) &&
         strcmp(str, "alarm"      ) &&
-        strcmp(str, "navigator"  ) &&
         strcmp(str, "game"       ) &&
         strcmp(str, "player"     ) &&
         strcmp(str, "event"      ) &&
