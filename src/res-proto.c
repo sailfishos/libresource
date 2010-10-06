@@ -101,13 +101,15 @@ EXPORT int resproto_reply_message(resset_t   *rset,
                                   int32_t     errcod,
                                   const char *errmsg)
 {
-    resconn_t *rcon = rset->resconn;
+    resconn_t *rcon;
     resmsg_t   reply;
     int        success;
 
     if (!rset || !resmsg)
         success = FALSE;
     else {
+        rcon = rset->resconn;
+
         if (protodata == NULL)
             success = TRUE;
         else {

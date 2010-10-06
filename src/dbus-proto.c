@@ -276,10 +276,12 @@ static void status_method(DBusPendingCall *pend, void *data)
         if (dbus_message_get_type(dbusmsg) == DBUS_MESSAGE_TYPE_ERROR) {
             errmsg = dbus_message_get_error_name(dbusmsg);
 
-            if (!strncmp(errmsg, "org.freedesktop.", 16))
-                errmsg += 16;
-            else if (!strncmp(errmsg, "com.nokia.", 10))
-                errmsg += 10;
+            if (errmsg != NULL) {
+                if (!strncmp(errmsg, "org.freedesktop.", 16))
+                    errmsg += 16;
+                else if (!strncmp(errmsg, "com.nokia.", 10))
+                    errmsg += 10;
+            }
 
             memset(&resmsg, 0, sizeof(resmsg));
             resmsg.status.type   = RESMSG_STATUS;

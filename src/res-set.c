@@ -79,11 +79,12 @@ void resset_ref(resset_t *rset)
  
 void resset_unref(resset_t *rset)
 {
-    resconn_dbus_t  *rcon = &rset->resconn->dbus;
+    resconn_dbus_t  *rcon;
     resset_t        *prev;
 
     if (rset != NULL && --rset->refcnt <= 0) {
- 
+        rcon = &rset->resconn->dbus;
+
         for (prev = (resset_t *)&rcon->rsets;  prev->next;  prev = prev->next){
             if (prev->next == rset) {
                 prev->next = rset->next;
