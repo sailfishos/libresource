@@ -7,10 +7,13 @@ AC_INIT([libresource],
 	[multimedia at ok.research.nokia.com])
 
 AC_CONFIG_SRCDIR([src])
+AC_CONFIG_MACRO_DIR([m4])
 
 #AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE(AC_PACKAGE_NAME, AC_PACKAGE_VERSION)
 AC_CONFIG_HEADERS([config.h])
+
+AC_SUBST(ACLOCAL_AMFLAGS, "-I m4")
 
 AC_PROG_CC
 AC_PROG_GCC_TRADITIONAL
@@ -54,14 +57,18 @@ AS_HELP_STRING([--enable-debug],[Enable debug (log) @<:@default=false@:>@]),
 esac],[debug=false])
 AM_CONDITIONAL([DEBUG], [test x$debug = xtrue])
 
+# shave
+SHAVE_INIT([build-aux], [enable])
 
-AC_CONFIG_FILES([libresource0.pc
-		libresource0-glib.pc
-		Makefile
-		src/Makefile
-		client/Makefile
-		examples/Makefile
-		tests/Makefile
+AC_CONFIG_FILES([build-aux/shave
+		 build-aux/shave-libtool
+		 libresource0.pc
+		 libresource0-glib.pc
+		 Makefile
+		 src/Makefile
+		 client/Makefile
+		 examples/Makefile
+		 tests/Makefile
 ])
 
 AC_OUTPUT

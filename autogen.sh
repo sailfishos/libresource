@@ -5,6 +5,7 @@ AUTOHEADER="autoheader"
 AUTOMAKE="automake"
 ACLOCAL="aclocal"
 LIBTOOLIZE="libtoolize"
+ACLOCAL_INCLUDES="-I m4"
 
 srcdir=`dirname $0`
 test -z "$srcdir" && srcdir=.
