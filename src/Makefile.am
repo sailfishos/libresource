@@ -8,7 +8,7 @@ libresource_la_CFLAGS = @DBUS_CFLAGS@ -I$(top_srcdir) -fvisibility=hidden
 if DEBUG
 libresource_la_CFLAGS += -D__DEBUG__
 endif
-libresource_la_LDFLAGS = /usr/lib -version-info $(subst .,:,$(VERSION))
+libresource_la_LDFLAGS = /usr/lib -version-info @LIBRESOURCE_VERSION_INFO@
 libresource_la_LIBADD = @DBUS_LIBS@
 
 libresource_glib_la_SOURCES = resource.c resource-glib-glue.c
@@ -17,7 +17,7 @@ libresource_glib_la_CFLAGS = @DBUS_CFLAGS@ -I$(top_srcdir)/src \
 if DEBUG
 libresource_glib_la_CFLAGS += -D__DEBUG__
 endif
-libresource_glib_la_LDFLAGS = /usr/lib -version-info $(subst .,:,$(VERSION))
+libresource_glib_la_LDFLAGS = /usr/lib -version-info @LIBRESOURCE_VERSION_INFO@
 libresource_glib_la_LIBADD = $(top_builddir)/src/libresource.la @DBUS_LIBS@
 
 

@@ -2,15 +2,12 @@
 # Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.59)
 
+AC_INIT([libresource],
+	m4_esyscmd([build-aux/git-version-gen .tarball-version]),
+	[multimedia at ok.research.nokia.com])
 
-m4_define(TDIR, esyscmd(/bin/bash -c pwd | tr \\n /))
-m4_define(PKGNAM, [libresource])
-m4_define(PKGSRC, esyscmd(grep -m 1 -o "PKGNAM (.*)" TDIR/debian/changelog | tr -d \\n))
-m4_define(PKGVER, regexp(PKGSRC, PKGNAM[ ([1234]*:*\([0123456789.]+\).*)], [\1]))
-
-
-AC_INIT(PKGNAM, PKGVER, [multimedia@ok.research.nokia.com])
 AC_CONFIG_SRCDIR([src])
+
 #AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE(AC_PACKAGE_NAME, AC_PACKAGE_VERSION)
 AC_CONFIG_HEADERS([config.h])
@@ -19,21 +16,23 @@ AC_PROG_CC
 AC_PROG_GCC_TRADITIONAL
 AC_GNU_SOURCE
 
-
 AC_HEADER_STDC
 AC_INCLUDES_DEFAULT
 
-# libtool
-LT_CURRENT=0
-LT_REVISION=1
-LT_AGE=0
-AC_DISABLE_STATIC
+m4_define(version_major, `echo $VERSION | cut -d. -f1 | cut -d- -f1`)
+m4_define(version_minor, `echo $VERSION | cut -d. -f2 | cut -d- -f1`)
+m4_define(version_patch, `echo $VERSION | cut -d. -f3 | cut -d- -f1`)
+
+AC_SUBST(VERSION)
+AC_SUBST(VERSION_MAJOR, version_major)
+AC_SUBST(VERSION_MINOR, version_minor)
+AC_SUBST(VERSION_PATCH, version_patch)
+AC_SUBST(VERSION_FULL, version_major.version_minor.version_patch)
+
+# libtool API versioning
 AC_PROG_LIBTOOL
-AC_SUBST(LT_CURRENT)
-AC_SUBST(LT_REVISION)
-AC_SUBST(LT_AGE)
-
-
+LIBRESOURCE_VERSION_INFO="0:18:0"
+AC_SUBST(LIBRESOURCE_VERSION_INFO)
 
 # check pkgconfig
 AC_CHECK_PROG(have_pkg_config, pkg-config, yes, no)
@@ -56,19 +55,21 @@ esac],[debug=false])
 AM_CONDITIONAL([DEBUG], [test x$debug = xtrue])
 
 
-AC_OUTPUT([
-	libresource0.pc
-	libresource0-glib.pc
-	Makefile
-	src/Makefile
-	client/Makefile
-	examples/Makefile
-	tests/Makefile
+AC_CONFIG_FILES([libresource0.pc
+		libresource0-glib.pc
+		Makefile
+		src/Makefile
+		client/Makefile
+		examples/Makefile
+		tests/Makefile
 ])
 
-echo "
- == $PACKAGE_NAME $VERSION ==
+AC_OUTPUT
 
+echo "
+ == $PACKAGE_NAME ==
+    Version:                $VERSION
+        API:                ${LIBRESOURCE_VERSION_INFO//:/.}
     Compiler:               ${CC}
     CFLAGS:                 ${CFLAGS}
 
