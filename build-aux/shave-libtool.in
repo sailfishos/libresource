@@ -65,7 +65,7 @@ while test "$#" -gt 0; do
         preserved_args="$preserved_args $opt"
 	;;
     *)
-        preserved_args="$preserved_args $opt"
+        preserved_args="$preserved_args '$opt'"
         ;;
       esac
 done
@@ -102,8 +102,8 @@ if test -z $V; then
     if test $pass_though -eq 0; then
         echo "$Q$output"
     fi
-    $LIBTOOL --silent $tag $preserved_args
+    eval "$LIBTOOL --silent $tag $preserved_args"
 else
     echo $LIBTOOL $tag $preserved_args
-    $LIBTOOL $tag $preserved_args
+    eval "$LIBTOOL $tag $preserved_args"
 fi
