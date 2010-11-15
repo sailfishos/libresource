@@ -833,7 +833,7 @@ static void usage(int exit_code)
     printf("\t\tVideoRecording\n");
     printf("\t\tVibra\n");
     printf("\t\tLeds\n");
-    printf("\t\tBackLight\n");
+    printf("\t\tBacklight\n");
     printf("\t\tSystemButton\n");
     printf("\t\tLockButton\n");
     printf("\t\tScaleButton\n");
@@ -927,7 +927,7 @@ static uint32_t parse_resource_list(char *rlist_str, int exit_if_error)
         { RESMSG_VIDEO_RECORDING,  "VideoRecording" },
         { RESMSG_VIBRA          ,  "Vibra"          },
         { RESMSG_LEDS           ,  "Leds"           },
-        { RESMSG_BACKLIGHT      ,  "BackLight"      },
+        { RESMSG_BACKLIGHT      ,  "Backlight"      },
         { RESMSG_SYSTEM_BUTTON  ,  "SystemButton"   },
         { RESMSG_LOCK_BUTTON    ,  "LockButton"     },
         { RESMSG_SCALE_BUTTON   ,  "ScaleButton"    },
