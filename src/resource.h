@@ -77,7 +77,7 @@ int  resource_set_configure_audio(resource_set_t *resource_set,
 int  resource_set_acquire(resource_set_t *resource_set);
 int  resource_set_release(resource_set_t *resource_set);
 
-
+int  resource_set_is_acquiring(resource_set_t *resource_set);
 
 
 #ifdef	__cplusplus
