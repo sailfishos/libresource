@@ -566,6 +566,7 @@ static void create_manager(void)
     resproto_set_handler(rconn, RESMSG_UNREGISTER, manager_receive_message);
     resproto_set_handler(rconn, RESMSG_GRANT     , manager_receive_message);
     resproto_set_handler(rconn, RESMSG_ADVICE    , manager_receive_message);
+    resproto_set_handler(rconn, RESMSG_RELEASE   , manager_receive_message);
     
     connect_to_manager(rconn);
 }
@@ -735,6 +736,14 @@ static void manager_receive_message(resmsg_t *msg, resset_t *rs, void *data)
                 print_message("resources might be acquired: %s", buf);
             else
                 print_message("advice: %s", buf);
+            print_input();
+            break;
+
+        case RESMSG_RELEASE:
+            print_message("release request from manager");
+            memset(&req, 0, sizeof(resmsg_t));
+            req.possess.type = RESMSG_RELEASE;
+            manager_send_message(&req);
             print_input();
             break;
 

@@ -119,6 +119,7 @@ static void            connect_to_manager(resconn_t *, resource_set_t *);
 static void            disconnect_from_manager(resmsg_t *, resset_t *,void *);
 static void            receive_grant_message(resmsg_t *, resset_t *, void *);
 static void            receive_advice_message(resmsg_t *, resset_t *, void *);
+static void            receive_release_message(resmsg_t *, resset_t *, void *);
 static int             send_register_message(resource_set_t *, uint32_t);
 static int             send_unregister_message(resource_set_t *, uint32_t);
 static int             send_update_message(resource_set_t *, uint32_t);
@@ -330,6 +331,11 @@ EXPORT int resource_set_release(resource_set_t *rs)
 }
 
 
+EXPORT int resource_set_is_acquiring(resource_set_t *rs)
+{
+    return (rs && rs->acquire) ? TRUE : FALSE;
+}
+
 
 static DBusConnection *get_dbus(void)
 {
@@ -370,6 +376,7 @@ static resconn_t *get_manager(DBusConnection *dbus)
         resproto_set_handler(mgr, RESMSG_UNREGISTER, disconnect_from_manager);
         resproto_set_handler(mgr, RESMSG_GRANT     , receive_grant_message  );
         resproto_set_handler(mgr, RESMSG_ADVICE    , receive_advice_message );
+        resproto_set_handler(mgr, RESMSG_RELEASE   , receive_release_message);
     }
 
     return mgr;
@@ -431,6 +438,9 @@ static void receive_grant_message(resmsg_t *msg, resset_t *resset, void *data)
     if (rs != NULL && resset == rs->resset) {
         resource_log("recived grant %u (resources 0x%x)", rn, gr);
 
+        if (!gr && (resset->mode & RESOURCE_AUTO_RELEASE))
+            rs->acquire = FALSE;
+
         rs->grantcb.function(rs, gr, rs->grantcb.data);
     }
 }
@@ -446,6 +456,18 @@ static void receive_advice_message(resmsg_t *msg, resset_t *resset, void *data)
         if (rs->advicecb.function) {
             rs->advicecb.function(rs, adv, rs->advicecb.data);
         }
+    }
+}
+
+static void receive_release_message(resmsg_t *msg,resset_t *resset,void *data)
+{
+    resource_set_t *rs  = resset->userdata;
+
+    (void)data;
+
+    if (rs != NULL && resset == rs->resset) {
+        rs->acquire = FALSE;
+        push_request(rs, RESMSG_RELEASE, NULL,NULL);
     }
 }
 
