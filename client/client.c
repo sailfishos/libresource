@@ -71,7 +71,8 @@ typedef struct {
     GIOChannel     *chan;
     guint           evsrc;
     int             accept;
-    char            buf[256];
+    char           *buf;
+    int             buf_size;
     int             len;        /* buffer length */
 } input_t;
 
@@ -223,7 +224,27 @@ static void create_input(void)
     if ((input.chan = g_io_channel_unix_new(0)) == NULL)
         print_error("Failed to create input");
 
+    input.buf_size = 256;
+    input.buf = malloc(input.buf_size);
+    
+    if (input.buf == NULL)
+        print_error("Failed to allocate input buffer");
+    
+    memset(input.buf, 0, input.buf_size);
+
     input.evsrc = g_io_add_watch(input.chan, cond, input_cb, NULL);
+}
+
+
+static void resize_input(void)
+{
+    input.buf = realloc(input.buf, input.buf_size * 2);
+    
+    if (input.buf == NULL)
+        print_error("Failed to grow buffer to %d bytes", 2 * input.buf_size);
+    
+    memset(input.buf + input.buf_size, 0, input.buf_size);
+    input.buf_size *= 2;
 }
 
 static void destroy_input(void)
@@ -447,12 +468,13 @@ static gboolean input_cb(GIOChannel *ch, GIOCondition cond, gpointer data)
 
     if (cond == G_IO_IN) {
         if (!input.accept) {
+            errno = 0;
             while (read(0, ignore, sizeof(ignore)) > 0 || errno == EINTR)
                 ;
         }
         else {
-            while ((rest = sizeof(input.buf) - input.len) > 0) {
-
+            while ((rest = input.buf_size - input.len) > 0) {
+                errno = 0;
                 if ((junk = read(0, input.buf + input.len, rest)) < 0) {
                     if (errno == EAGAIN)
                         break;
@@ -464,6 +486,9 @@ static gboolean input_cb(GIOChannel *ch, GIOCondition cond, gpointer data)
                 }
                 
                 input.len += junk;
+
+                if (input.len == input.buf_size)
+                    resize_input();
             }
             
             lincnt = 0;
