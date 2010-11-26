@@ -225,7 +225,7 @@ EXPORT char *resmsg_res_str(uint32_t res, char *buf, int len)
         }
     } /* for */
     
-    if (l > 0)
+    if (len > 0)
         snprintf(p, len, "%s(%s)", *s ? " ":"<no-resource> ", hex);
 
     return buf;
