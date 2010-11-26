@@ -185,7 +185,7 @@ EXPORT char *resmsg_mod_str(uint32_t mod, char *buf, int len)
         }
     } /* for */
     
-    if (l > 0)
+    if (len > 0)
         snprintf(p, len, "%s(%s)", *s ? " ":"<no-mode> ", hex);
 
     return buf;
