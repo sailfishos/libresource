@@ -251,6 +251,7 @@ static void destroy_input(void)
 {
     g_source_remove(input.evsrc);
     g_io_channel_unref(input.chan);
+    free(input.buf);
 
     memset(&input, 0, sizeof(input_t));
 }
