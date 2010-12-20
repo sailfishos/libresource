@@ -55,6 +55,7 @@ typedef struct {
     int             verbose;
     DBusBusType     bustype;
     int             allow_unknown;
+    char           *prefix;
 } conf_t;
 
 typedef struct {
@@ -110,6 +111,7 @@ static void         parse_options(int, char **);
 static char        *parse_class_string(char *);
 static uint32_t     parse_resource_list(char *, int);
 static uint32_t     parse_mode_values(char *, int);
+static char *       parse_prefix(char *, int);
 static DBusBusType  parse_bustype(char *, int);
 
 static char            *exe_name = "";
@@ -282,7 +284,12 @@ static void accept_input(int accept)
 static void print_input(void)
 {
     if (input.accept) {
-        printf("resource> %s", input.buf);
+        if (config.prefix == NULL) {
+            printf("resource> %s", input.buf);
+        }
+        else {
+            printf("%s: resource> %s", config.prefix, input.buf);
+        }
         fflush(stdout);
     }
 }
@@ -793,7 +800,11 @@ static void print_error(char *fmt, ...)
     va_list  ap;
     char     fmtbuf[512];
 
-    if (config.verbose) {
+    if (config.prefix) {
+        snprintf(fmtbuf, sizeof(fmtbuf), "%s%s: %s\n",
+                 input.accept ? "\n" : "", config.prefix, fmt);
+    }
+    else if (config.verbose) {
         snprintf(fmtbuf, sizeof(fmtbuf), "%s%s: %s\n",
                  input.accept ? "\n" : "", exe_name, fmt);
     }
@@ -814,7 +825,11 @@ static void print_message(char *fmt, ...)
     va_list  ap;
     char     fmtbuf[512];
 
-    if (config.verbose) {
+    if (config.prefix) {
+        snprintf(fmtbuf, sizeof(fmtbuf), "%s%s: %s\n",
+                 input.accept ? "\n" : "", config.prefix, fmt);
+    }
+    else if (config.verbose) {
         snprintf(fmtbuf, sizeof(fmtbuf), "%s%s: %s\n",
                  input.accept ? "\n" : "", exe_name, fmt);
     }
@@ -893,8 +908,9 @@ static void parse_options(int argc, char **argv)
     config.trace = FALSE;
     config.id    = 1;
     config.bustype = DBUS_BUS_SYSTEM;
+    config.prefix = NULL;
 
-    while ((option = getopt(argc, argv, "htvud:f:s:o:m:")) != -1) {
+    while ((option = getopt(argc, argv, "htvud:f:s:o:m:p:")) != -1) {
 
         switch (option) {
             
@@ -907,6 +923,7 @@ static void parse_options(int argc, char **argv)
         case 's': config.rset.share    = parse_resource_list(optarg, 1); break;
         case 'm': config.rset.mask     = parse_resource_list(optarg, 1); break;
         case 'u': config.allow_unknown = TRUE;                           break;
+        case 'p': config.prefix        = parse_prefix(optarg, 1);        break;
         default:  usage(EINVAL);                                         break;
         
         }
@@ -951,6 +968,27 @@ static char *parse_class_string(char *str)
    }
 
     return str;
+}
+
+static char * parse_prefix(char *rlist_str, int exit_if_error)
+{
+    static char buf[64];
+
+    if (rlist_str == NULL) {
+        print_message("missing prefix");
+        if (exit_if_error) {
+            exit(0);
+        }
+        else {
+            return NULL;
+        }
+    }
+    else {
+        strncpy(buf, rlist_str, sizeof(buf));
+        buf[63] = '\0';
+    }
+
+    return buf;
 }
 
 static uint32_t parse_resource_list(char *rlist_str, int exit_if_error)
