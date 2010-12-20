@@ -38,7 +38,7 @@ typedef struct {
 } statuscb_data_t;
 
 static resconn_internal_t   *resproto_manager;
-static uint32_t              timeout = 2000;
+static uint32_t              timeout = 10000;
 
 static int notify_clients_about_manager_up(void *);
 

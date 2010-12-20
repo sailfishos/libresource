@@ -111,7 +111,7 @@ static void         parse_options(int, char **);
 static char        *parse_class_string(char *);
 static uint32_t     parse_resource_list(char *, int);
 static uint32_t     parse_mode_values(char *, int);
-static char *       parse_prefix(char *, int);
+static char        *parse_prefix(char *, int);
 static DBusBusType  parse_bustype(char *, int);
 
 static char            *exe_name = "";
