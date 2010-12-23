@@ -695,7 +695,8 @@ static void manager_receive_message(resmsg_t *msg, resset_t *rs, void *data)
                     index = REQHASH_INDEX(msg->notify.reqno);
 
                     /* lost or denied */
-                    if(reqtyp[index] == RESMSG_INVALID) {
+                    if(reqtyp[index] == RESMSG_INVALID ||
+                       reqtyp[index] == RESMSG_UPDATE ) {
                         /* server initiated message */
                         print_message("lost: %s", buf);
                     }
