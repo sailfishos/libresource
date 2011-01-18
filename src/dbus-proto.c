@@ -601,12 +601,14 @@ static DBusHandlerResult manager_method(DBusConnection *dcon,
     (void)user_data;
 
     int         type      = dbus_message_get_type(dbusmsg);
+    int         found;
     const char *interface = dbus_message_get_interface(dbusmsg);
     const char *member    = dbus_message_get_member(dbusmsg);
     const char *sender    = dbus_message_get_sender(dbusmsg);
     resmsg_t    resmsg;
     resconn_t  *rcon;
     resset_t   *rset;
+    resset_t   *iter;
     char       *method;
 
 
@@ -625,7 +627,31 @@ static DBusHandlerResult manager_method(DBusConnection *dcon,
                         rcon->dbus.receive(&resmsg, rset, dbusmsg);
                     }
                     if (resmsg.type == RESMSG_UNREGISTER) {
+
+                        /* unref (and possibly delete) the resource set */
+
                         rcon->dbus.disconn(rset);
+
+                        /* go through the resources to see if there are
+                         * still rsets from the same sender */
+
+                        found = 0;
+
+                        for (iter = rcon->any.rsets;   iter;   iter = iter->next) {
+                            if (!strcmp(sender, iter->peer)) {
+                                found = 1;
+                                break;
+                            }
+                        }
+
+                        if (!found) {
+
+                            /* this was the last resource set from this
+                             * D-Bus client -> stop listening for its
+                             * NameOwnerChanged events */
+
+                            watch_client(&rcon->dbus, sender, FALSE);
+                        }
                     }
                         
                     return DBUS_HANDLER_RESULT_HANDLED;
