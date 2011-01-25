@@ -660,6 +660,22 @@ static DBusHandlerResult manager_method(DBusConnection *dcon,
 
 
             if (resmsg.type == RESMSG_REGISTER) {
+
+                /* see if we are already following the lifecycle of this
+                 * particular D-Bus client */
+
+                found = 0;
+
+                for (iter = rcon->any.rsets;   iter;   iter = iter->next) {
+                    if (!strcmp(sender, iter->peer)) {
+                        found = 1;
+                        break;
+                    }
+                }
+
+                /* create the resource set and add it to the resource
+                 * list */
+
                 rset = resset_create(rcon, sender, resmsg.any.id,
                                      RESPROTO_RSET_STATE_CONNECTED,
                                      resmsg.record.klass,
@@ -669,11 +685,16 @@ static DBusHandlerResult manager_method(DBusConnection *dcon,
                                      resmsg.record.rset.share,
                                      resmsg.record.rset.mask);
 
-                if (rset != NULL && watch_client(&rcon->dbus, sender, TRUE)) {
+                if (rset != NULL && (found || watch_client(&rcon->dbus, sender, TRUE))) {
+
+                    /* we either were already following the client or
+                     * otherwise we set up a D-Bus match string
+                     * successfully. */
+
                     dbus_message_ref(dbusmsg);
                     rcon->dbus.receive(&resmsg, rset, dbusmsg);
                 }
-                    
+
                 return DBUS_HANDLER_RESULT_HANDLED;
             }
         }
