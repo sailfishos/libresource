@@ -56,6 +56,7 @@ EXPORT char *resmsg_dump_message(resmsg_t *resmsg,
     resmsg_possess_t  *possess;
     resmsg_notify_t   *notify;
     resmsg_audio_t    *audio;
+    resmsg_video_t    *video;
     resmsg_status_t   *status;
     resmsg_property_t *property;
     resmsg_match_t    *match;
@@ -112,6 +113,11 @@ EXPORT char *resmsg_dump_message(resmsg_t *resmsg,
         PRINT("    pattern: '%s'", match->pattern);
         break;
 
+    case RESMSG_VIDEO:
+        video = &resmsg->video;
+        PRINT("pid        : %u"  , video->pid);
+        break;
+
     case RESMSG_STATUS:
         status = &resmsg->status;
         PRINT("errcod    : %d"  , status->errcod);
@@ -144,6 +150,7 @@ EXPORT char *resmsg_type_str(resmsg_type_t type)
     case RESMSG_GRANT:         str = "grant";            break;
     case RESMSG_ADVICE:        str = "advice";           break;
     case RESMSG_AUDIO:         str = "audio";            break;
+    case RESMSG_VIDEO:         str = "video";            break;
     case RESMSG_STATUS:        str = "status";           break;
     default:                   str = "<unknown type>";   break;
     }

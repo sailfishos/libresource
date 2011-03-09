@@ -325,6 +325,7 @@ static void parse_input(void)
             "   update all:opt:share:shmask where all,opt,share and shmask "
                      "are comma separated resources\n"
             "   audio group pid prop-name:prop-value\n"
+            "   video pid\n"
             "   disconnect\n"
             "   flood count\n"
             "   stop"
@@ -418,6 +419,24 @@ static void parse_input(void)
             msg.audio.property.name = name;
             msg.audio.property.match.method  = resmsg_method_equals;
             msg.audio.property.match.pattern = value; 
+            
+            manager_send_message(&msg);
+        } while (0);
+    } 
+    else if (!strncmp(str, "video", 5)) {
+        p = skip_whitespaces(str + 5);
+
+        do { 
+            if (!(pid = strtoul(p,&p,10)) || (*p && *p != ' ' && *p != '\t')) {
+                print_message("invalid pid");
+                break;
+            }
+
+            str = skip_whitespaces(p);
+
+            memset(&msg, 0, sizeof(resmsg_t));
+            msg.video.type = RESMSG_VIDEO;
+            msg.video.pid  = pid;
             
             manager_send_message(&msg);
         } while (0);

@@ -70,9 +70,15 @@ typedef struct {
     char                   *stream;     /* pulseaudio stream name */
 } audio_config_t;
 
+typedef struct {
+    RESOURCE_CONFIG_COMMON;
+    pid_t                    pid;        /* PID of the streaming component */
+} video_config_t;
+
 typedef union resource_config_u {
     any_config_t             any;
     audio_config_t           audio;
+    video_config_t           video;
 } resource_config_t;
 
 typedef struct {
@@ -124,6 +130,7 @@ static int             send_register_message(resource_set_t *, uint32_t);
 static int             send_unregister_message(resource_set_t *, uint32_t);
 static int             send_update_message(resource_set_t *, uint32_t);
 static int             send_audio_message(resource_set_t *, uint32_t);
+static int             send_video_message(resource_set_t *, uint32_t);
 static int             send_acquire_message(resource_set_t *, uint32_t);
 static int             send_release_message(resource_set_t *, uint32_t);
 static void            connect_complete_cb(resource_set_t *, uint32_t, void *,
@@ -139,6 +146,8 @@ static int             audio_config_create(resource_set_t *, const char *,
                                            pid_t pid, const char *);
 static int             audio_config_update(resource_config_t *, const char *,
                                            pid_t, const char *);
+static int             video_config_create(resource_set_t *, pid_t pid);
+static int             video_config_update(resource_config_t *, pid_t);
 static uint32_t        push_request(resource_set_t *, resmsg_type_t,
                                     request_complete_t, void *);
 static request_t      *peek_request(resource_set_t *);
@@ -310,6 +319,34 @@ EXPORT int resource_set_configure_audio(resource_set_t *rs,
     return TRUE;
 }
 
+EXPORT int resource_set_configure_video(resource_set_t *rs, pid_t pid)
+{
+    resource_config_t *prev;
+    resource_config_t *cfg;
+    int                need_update;
+
+    if (!(rs->resources.all & RESOURCE_VIDEO_PLAYBACK))
+        return FALSE;
+
+    for (prev = (resource_config_t *)&rs->configs; 
+         (cfg = prev->any.next) != NULL;
+         prev = prev->any.next)
+    {
+        if (cfg->any.mask == RESOURCE_VIDEO_PLAYBACK) {
+            need_update = video_config_update(cfg, pid);
+            break;
+        }
+    }
+
+    if (cfg == NULL) 
+        need_update = video_config_create(rs, pid);
+
+    if (need_update)
+        push_request(rs, RESMSG_VIDEO, NULL,NULL);
+
+    return TRUE;
+}
+
 EXPORT int resource_set_acquire(resource_set_t *rs)
 {
     if (rs && !rs->acquire) {
@@ -403,8 +440,13 @@ static void connect_to_manager(resconn_t *resconn, resource_set_t *rs)
 
         for (cfg = rs->configs;  cfg != NULL;  cfg = cfg->any.next) {
             switch (cfg->any.mask) {
+
             case RESMSG_AUDIO_PLAYBACK:
                 push_request(rs, RESMSG_AUDIO, NULL,NULL);
+
+            case RESMSG_VIDEO_PLAYBACK:
+                push_request(rs, RESMSG_VIDEO, NULL,NULL);
+
             default:
                 break;
             }
@@ -580,6 +622,36 @@ static int send_audio_message(resource_set_t *rs, uint32_t rn)
 }
 
 
+static int send_video_message(resource_set_t *rs, uint32_t rn)
+{
+    resset_t          *resset = rs->resset;
+    int                success = FALSE;
+    resource_config_t *cfg;
+    resmsg_t           msg;
+
+    if (resset != NULL && (void *)rs == resset->userdata) {
+        for (cfg = rs->configs;  cfg != NULL;   cfg = cfg->any.next) {
+            if (cfg->any.mask == RESOURCE_VIDEO_PLAYBACK) {
+
+                resource_log("sending video message");
+
+                memset(&msg, 0, sizeof(msg));
+                msg.video.type  = RESMSG_VIDEO;
+                msg.video.id    = rs->id;
+                msg.video.reqno = rn;
+                msg.video.pid   = cfg->video.pid;
+        
+                success = resproto_send_message(resset, &msg, status_cb);
+
+                break;
+            }
+        } /* for */
+    }
+
+    return success;
+}
+
+
 static int send_acquire_message(resource_set_t *rs, uint32_t rn)
 {
     resset_t *resset  = rs->resset;
@@ -737,6 +809,7 @@ static void send_request(resource_set_t *rs)
         case RESMSG_UNREGISTER: success = send_unregister_message(rs,rn);break;
         case RESMSG_UPDATE:     success = send_update_message(rs, rn);   break;
         case RESMSG_AUDIO:      success = send_audio_message(rs, rn);    break;
+        case RESMSG_VIDEO:      success = send_video_message(rs, rn);    break;
         case RESMSG_ACQUIRE:    success = send_acquire_message(rs, rn);  break;
         case RESMSG_RELEASE:    success = send_release_message(rs, rn);  break;
         default:                success = FALSE;                         break;
@@ -830,6 +903,47 @@ static int audio_config_update(resource_config_t *cfg,
             need_update = TRUE;
             free(oldstr);
             cfg->audio.stream = strdup(stream);
+        }
+    }
+
+    return need_update;
+}
+
+
+
+static int video_config_create(resource_set_t *rs, pid_t pid)
+{
+    resource_config_t *cfg;
+    int need_update = FALSE;
+    
+    if (pid) {
+        if ((cfg = malloc(sizeof(resource_config_t))) != NULL) {
+            memset(cfg, 0, sizeof(resource_config_t));
+            cfg->video.next = rs->configs;
+            cfg->video.mask = RESOURCE_VIDEO_PLAYBACK;
+            cfg->video.pid  = pid;
+
+            rs->configs = cfg;
+
+            need_update = TRUE;
+        }
+    }
+
+    return need_update;
+}
+
+static int video_config_update(resource_config_t *cfg, pid_t pid)
+{
+    pid_t  oldpid;
+    int    need_update = FALSE;
+
+
+    if (pid) {
+        oldpid = cfg->video.pid;
+        
+        if (!oldpid || (oldpid && (oldpid != pid))) {
+            need_update = TRUE;
+            cfg->video.pid = pid;
         }
     }
 

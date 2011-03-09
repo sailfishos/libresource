@@ -46,6 +46,7 @@ extern "C" {
 #define RESMSG_SNAP_BUTTON         RESOURCE_SNAP_BUTTON
 #define RESMSG_LENS_COVER          RESOURCE_LENS_COVER
 #define RESMSG_HEADSET_BUTTONS     RESOURCE_HEADSET_BUTTONS
+#define RESMSG_LARGE_SCREEN        RESOURCE_LARGE_SCREEN
 
 #define RESMSG_MODE_AUTO_RELEASE   RESOURCE_AUTO_RELEASE
 #define RESMSG_MODE_ALWAYS_REPLY   RESOURCE_ALWAYS_REPLY
@@ -61,6 +62,7 @@ typedef enum resmsg_type_e {
     RESMSG_GRANT,
     RESMSG_ADVICE,
     RESMSG_AUDIO,
+    RESMSG_VIDEO,
 
     RESMSG_MAX,
 
@@ -124,6 +126,11 @@ typedef struct {
 } resmsg_audio_t;
 
 typedef struct {
+    RESMSG_COMMON;               /* RESMSG_VIDEO */
+    uint32_t          pid;       /* PID of the streaming app, if any */
+} resmsg_video_t;
+
+typedef struct {
     RESMSG_COMMON;               /* RESMSG_STATUS */
     int32_t           errcod;    /* error code, if any */
     const char       *errmsg;    /* error message, if any */
@@ -137,6 +144,7 @@ typedef union resmsg_u {
     resmsg_possess_t  possess;
     resmsg_notify_t   notify;
     resmsg_audio_t    audio;
+    resmsg_video_t    video;
     resmsg_status_t   status;
 } resmsg_t;
 

@@ -66,6 +66,10 @@ resmsg_t *resmsg_internal_copy_message(resmsg_t *src)
             dst_match->pattern = strdup(src_match->pattern);
             break;
 
+        case RESMSG_VIDEO:
+            dst->video = src->video;
+            break;
+
         case RESMSG_STATUS:
             dst->status = src->status;
             dst->status.errmsg = strdup(src->status.errmsg);
@@ -100,6 +104,9 @@ void resmsg_internal_destroy_message(resmsg_t *msg)
             free(msg->audio.group);
             free(prop->name);
             free(match->pattern);
+            break;
+
+        case RESMSG_VIDEO:
             break;
 
         case RESMSG_STATUS:

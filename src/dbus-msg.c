@@ -39,6 +39,7 @@ DBusMessage *resmsg_dbus_compose_message(const char *dest,
     resmsg_possess_t  *possess;
     resmsg_notify_t   *notify;
     resmsg_audio_t    *audio;
+    resmsg_video_t    *video;
     resmsg_property_t *property;
     int                success;
 
@@ -110,7 +111,17 @@ DBusMessage *resmsg_dbus_compose_message(const char *dest,
                        DBUS_TYPE_INT32 , &property->match.method,
                        DBUS_TYPE_STRING,  property->match.pattern ?
                                          &property->match.pattern : &empty_str,
-                      DBUS_TYPE_INVALID);
+                       DBUS_TYPE_INVALID);
+        break;
+
+    case RESMSG_VIDEO:
+        video   = &resmsg->video;
+        success = dbus_message_append_args(dbusmsg,
+                       DBUS_TYPE_INT32 , &video->type,
+                       DBUS_TYPE_UINT32, &video->id,
+                       DBUS_TYPE_UINT32, &video->reqno,
+                       DBUS_TYPE_UINT32, &video->pid,
+                       DBUS_TYPE_INVALID);
         break;
     }
 
@@ -163,6 +174,7 @@ resmsg_t *resmsg_dbus_parse_message(DBusMessage *dbusmsg, resmsg_t *resmsg)
     resmsg_possess_t  *possess;
     resmsg_notify_t   *notify;
     resmsg_audio_t    *audio;
+    resmsg_video_t    *video;
     resmsg_status_t   *status;
     resmsg_property_t *property;
     resmsg_match_t    *match;
@@ -262,6 +274,16 @@ resmsg_t *resmsg_dbus_parse_message(DBusMessage *dbusmsg, resmsg_t *resmsg)
                                         DBUS_TYPE_STRING, &property->name,
                                         DBUS_TYPE_INT32 , &match->method,
                                         DBUS_TYPE_STRING, &match->pattern,
+                                        DBUS_TYPE_INVALID);
+        break;
+
+    case RESMSG_VIDEO:
+        video   = &resmsg->video;
+        success = dbus_message_get_args(dbusmsg, NULL,
+                                        DBUS_TYPE_INT32 , &video->type,
+                                        DBUS_TYPE_UINT32, &video->id,
+                                        DBUS_TYPE_UINT32, &video->reqno,
+                                        DBUS_TYPE_UINT32, &video->pid,
                                         DBUS_TYPE_INVALID);
         break;
 

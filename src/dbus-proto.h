@@ -50,6 +50,7 @@ USA.
 #define RESPROTO_DBUS_GRANT_METHOD               "grant"
 #define RESPROTO_DBUS_ADVICE_METHOD              "advice"
 #define RESPROTO_DBUS_AUDIO_METHOD               "audio"
+#define RESPROTO_DBUS_VIDEO_METHOD               "video"
 
 int resproto_dbus_manager_init(resconn_dbus_t *, va_list);
 int resproto_dbus_client_init(resconn_dbus_t *, va_list);

@@ -61,9 +61,9 @@ int  resource_set_configure_advice_callback(resource_set_t      *resource_set,
                                             resource_callback_t  advicecb,
                                             void                *advicedata);
 
-int resource_set_configure_error_callback(resource_set_t             *rs,
-                                          error_callback_function_t  errorcb,
-                                          void                      *errordata);
+int resource_set_configure_error_callback(resource_set_t            *rs,
+                                          error_callback_function_t errorcb,
+                                          void                     *errordata);
 
 int  resource_set_configure_resources(resource_set_t *resource_set,
                                       uint32_t        mandatory,
@@ -73,6 +73,9 @@ int  resource_set_configure_audio(resource_set_t *resource_set,
                                   const char     *audio_group,
                                   pid_t           pid_of_renderer,
                                   const char     *pulseaudio_stream_name);
+
+int  resource_set_configure_video(resource_set_t *resource_set,
+                                  pid_t           pid_of_renderer);
 
 int  resource_set_acquire(resource_set_t *resource_set);
 int  resource_set_release(resource_set_t *resource_set);
