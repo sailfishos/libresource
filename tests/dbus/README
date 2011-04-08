@@ -1,0 +1,5 @@
+To get the policy manager test daemon to work:
+
+1. Copy org.maemo.resource.manager to /usr/share/dbus-1/services/
+2. Copy policy.conf to /etc/dbus-1/system.d/
+
