@@ -26,16 +26,6 @@ POLICY_DBUS_INTERFACE = "org.maemo.resource.manager"
 
 CLIENT_DBUS_INTERFACE = "org.maemo.resource.client"
 
-REGISTER   = "register"
-UNREGISTER = "unregister"
-UPDATE     = "update"
-ACQUIRE    = "acquire"
-RELEASE    = "release"
-GRANT      = "grant"
-ADVICE     = "advice"
-AUDIO      = "audio"
-VIDEO      = "video"
-
 mainloop = None
 
 class EventScheduler(threading.Thread):
@@ -47,6 +37,7 @@ class EventScheduler(threading.Thread):
         # scheduler for timed signals
         self.scheduler = sched.scheduler(time.time, time.sleep)
         self.condition = threading.Condition()
+
 
     def run(self):
         while True:
@@ -65,6 +56,7 @@ class EventScheduler(threading.Thread):
             self.scheduler.run()
             # print "stopped running events"
 
+
     def add_event(self, delay, function, *args):
         # print "> add_event"
         self.scheduler.enter(delay, 1, function, args)
@@ -76,30 +68,73 @@ class EventScheduler(threading.Thread):
 
 
 class DummyPolicyDaemon(dbus.service.Object):
+
     def __init__(self):
         self.bus = dbus.SystemBus()
         self.name = dbus.service.BusName(POLICY_DBUS_SERVICE, self.bus)
         print "registered name", self.name
         dbus.service.Object.__init__(self, self.name, POLICY_DBUS_PATH)
-        self.clients = []
+        self.event_scheduler = EventScheduler()
+        self.event_scheduler.start()
+        self.granted = True
+        self.clients = {}
 
-    """
-    method call sender=:1.132 -> dest=org.maemo.resource.manager serial=3 path=/org/maemo/resource/manager; interface=org.maemo.resource.manager; member=register
-       int32 0
-       uint32 1
-       uint32 1
-       uint32 1
-       uint32 0
-       uint32 0
-       uint32 0
-       string "player"
-       uint32 0
-    """
 
-    """
-    @dbus.service.method(POLICY_DBUS_INTERFACE)
-    def register(self, type, id, reqno, mandatory, optional, share, mask, klass,
-            mode, in_signature="iuuuuuusu", out_signature="", sender_keyword="sender"):
+    def error(self, foo):
+        pass # all status replies appear to time out
+
+
+    def reply(self, *args):
+        print "Reply"
+
+
+    def path(self, id):
+        return "/org/maemo/resource/client" + str(id)
+
+
+    def advice(self, sender, id, reqno, resources):
+        type = 6
+
+        print ""
+        print "ADVICE"
+        print "type:     ", str(type)
+        print "id:       ", str(id)
+        print "reqno:    ", str(reqno)
+        print "resources:", str(resources)
+
+        resource = self.clients[sender][self.path(id)]
+        resource["dbus"].advice(dbus.Int32(type), dbus.UInt32(id), dbus.UInt32(reqno), dbus.UInt32(resources),
+                reply_handler=self.reply, error_handler=self.error)
+
+
+    def grant(self, sender, id, reqno, resources):
+        type = 5
+
+        print ""
+        print "GRANT"
+        print "type:     ", str(type)
+        print "id:       ", str(id)
+        print "reqno:    ", str(reqno)
+        print "resources:", str(resources)
+
+        path = self.path(id)
+
+        if self.clients.has_key(sender):
+            if self.clients[sender].has_key(path):
+                resource = self.clients[sender][path]
+                resource["dbus"].grant(dbus.Int32(type), dbus.UInt32(id),
+                        dbus.UInt32(reqno), dbus.UInt32(resources),
+                        reply_handler=self.reply, error_handler=self.error)
+
+
+    @dbus.service.method(POLICY_DBUS_INTERFACE, in_signature="iuuuuuusu", out_signature="iuuis",
+            sender_keyword="sender")
+    def register(self, type, id, reqno, mandatory, optional, share, mask, klass, mode, sender=None):
+
+        errorCode = 0
+        errorString = "OK"
+
+        print ""
         print "REGISTER", sender
         print "type:     ", str(type) 
         print "id:       ", str(id) 
@@ -110,18 +145,35 @@ class DummyPolicyDaemon(dbus.service.Object):
         print "mask:     ", str(mask) 
         print "class:    ", klass 
         print "mode:     ", str(mode) 
-        return None
-   """
-    
-    @dbus.service.method(POLICY_DBUS_INTERFACE, in_signature="i", out_signature="", sender_keyword="sender")
-    def register(self, type, sender):
-        print "REGISTER", sender
-        print "type:     ", str(type) 
-        return None
 
-    @dbus.service.method(POLICY_DBUS_INTERFACE)
-    def update(self, type, id, reqno, mandatory, optional, share, mask, klass, mode,
-            in_signature="iuuuuuusu", out_signature="", sender_keyword="sender"):
+        client = {}
+
+        if self.clients.has_key(sender):
+            client = self.clients[sender]
+
+        path = self.path(id)
+
+        clientProxy = self.bus.get_object(sender, path, introspect=False)
+        clientIf = dbus.Interface(clientProxy, CLIENT_DBUS_INTERFACE)
+
+        resource = { "mandatory":mandatory, "optional":optional, "dbus":clientIf }
+
+        client[path] = resource
+        self.clients[sender] = client
+
+        self.event_scheduler.add_event(1, self.advice, sender, id, reqno, resource["mandatory"])
+
+        return [9, id, reqno, errorCode, errorString]
+
+
+    @dbus.service.method(POLICY_DBUS_INTERFACE, in_signature="iuuuuuusu", out_signature="iuuis",
+            sender_keyword="sender")
+    def update(self, type, id, reqno, mandatory, optional, share, mask, klass, mode, sender=None):
+
+        errorCode = 0
+        errorString = "OK"
+
+        print ""
         print "UPDATE", sender
         print "type:     ", str(type) 
         print "id:       ", str(id) 
@@ -132,44 +184,80 @@ class DummyPolicyDaemon(dbus.service.Object):
         print "mask:     ", str(mask) 
         print "class:    ", klass 
         print "mode:     ", str(mode) 
-        return None
 
-    """
-    method call sender=:1.132 -> dest=org.maemo.resource.manager serial=4 path=/org/maemo/resource/manager; interface=org.maemo.resource.manager; member=acquire
-       int32 3
-       uint32 1
-       uint32 2
-    """
+        return [9, id, reqno, errorCode, errorString]
 
-    @dbus.service.method(POLICY_DBUS_INTERFACE)
-    def acquire(self, type, id, reqno, in_signature="iuu", out_signature="",
-            sender_keyword="sender"):
+
+    @dbus.service.method(POLICY_DBUS_INTERFACE, in_signature="iuu", out_signature="iuuis",
+            sender_keyword="sender")
+    def acquire(self, type, id, reqno, sender=None):
+
+        errorCode = 0
+        errorString = "OK"
+
+        print ""
         print "ACQUIRE", sender
         print "type:     ", str(type) 
         print "id:       ", str(id) 
         print "reqno:    ", str(reqno) 
-        return None
 
-    @dbus.service.method(POLICY_DBUS_INTERFACE)
-    def release(self, type, id, reqno, in_signature="iuu", out_signature="",
-            sender_keyword="sender"):
+        # find the client
+        resource = self.clients[sender][self.path(id)]
+
+        self.event_scheduler.add_event(1, self.grant, sender, id, reqno, resource["mandatory"])
+
+        return [9, id, reqno, errorCode, errorString]
+
+
+    @dbus.service.method(POLICY_DBUS_INTERFACE, in_signature="iuu", out_signature="iuuis",
+            sender_keyword="sender")
+    def release(self, type, id, reqno, sender=None):
+
+        errorCode = 0
+        errorString = "OK"
+
+        print ""
         print "RELEASE", sender
         print "type:     ", str(type) 
         print "id:       ", str(id) 
         print "reqno:    ", str(reqno) 
-        return None
 
-    @dbus.service.method(POLICY_DBUS_INTERFACE)
-    def unregister(self, type, id, reqno, in_signature="iuu", out_signature="", sender_keyword="sender"):
+        self.event_scheduler.add_event(1, self.grant, sender, id, reqno, 0)
+
+        return [9, id, reqno, errorCode, errorString]
+
+
+    @dbus.service.method(POLICY_DBUS_INTERFACE, in_signature="iuu", out_signature="iuuis",
+            sender_keyword="sender")
+    def unregister(self, type, id, reqno, sender=None):
+
+        errorCode = 0
+        errorString = "OK"
+
+        print ""
         print "UNREGISTER", sender
         print "type:     ", str(type) 
         print "id:       ", str(id) 
         print "reqno:    ", str(reqno) 
-        return None
 
-    @dbus.service.method(POLICY_DBUS_INTERFACE)
-    def audio(self, type, id, reqno, group, pid, streamName, method, pattern, in_signature="iuususis",
-            out_signature="", sender_keyword="sender"):
+        client = self.clients[sender]
+        path = self.path(id)
+        del client[path]
+
+        if len(client) == 0:
+            del self.clients[sender]
+
+        return [9, id, reqno, errorCode, errorString]
+
+
+    @dbus.service.method(POLICY_DBUS_INTERFACE, in_signature="iuususis",
+            out_signature="iuuis", sender_keyword="sender")
+    def audio(self, type, id, reqno, group, pid, streamName, method, pattern, sender=None):
+
+        errorCode = 0
+        errorString = "OK"
+
+        print ""
         print "AUDIO", sender
         print "type:       ", str(type) 
         print "id:         ", str(id) 
@@ -178,33 +266,26 @@ class DummyPolicyDaemon(dbus.service.Object):
         print "stream name:", streamName
         print "method:     ", str(method) 
         print "pattern:    ", pattern
-        return None
 
-    @dbus.service.method(POLICY_DBUS_INTERFACE)
-    def video(self, type, id, reqno, pid, in_signature="iuuu", out_signature="",
-            sender_keyword="sender"):
+        return [9, id, reqno, errorCode, errorString]
+
+
+    @dbus.service.method(POLICY_DBUS_INTERFACE, in_signature="iuuu", out_signature="iuuis",
+            sender_keyword="sender")
+    def video(self, type, id, reqno, pid, sender=None):
+
+        errorCode = 0
+        errorString = "OK"
+
+        print ""
         print "VIDEO", sender
         print "type:       ", str(type) 
         print "id:         ", str(id) 
         print "reqno:      ", str(reqno) 
         print "pid:        ", str(pid) 
-        return None
 
-    """
-    method call sender=:1.5 -> dest=:1.132 serial=96 path=/org/maemo/resource/client1; interface=org.maemo.resource.client; member=grant
-       int32 5
-       uint32 1
-       uint32 2
-       uint32 1
-    """
+        return [9, id, reqno, errorCode, errorString]
 
-    """
-    method call sender=:1.5 -> dest=:1.132 serial=94 path=/org/maemo/resource/client1; interface=org.maemo.resource.client; member=advice
-       int32 6
-       uint32 1
-       uint32 0
-       uint32 1
-    """
 
 def main(argv=None):
     dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
