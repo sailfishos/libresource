@@ -3,3 +3,30 @@ To get the policy manager test daemon to work:
 1. Copy org.maemo.resource.manager to /usr/share/dbus-1/services/
 2. Copy policy.conf to /etc/dbus-1/system.d/
 
+You can test whether or not the permissions are ok with this message:
+
+dbus-send --system --print-reply --dest=org.maemo.resource.manager \
+    /org/maemo/resource/manager org.maemo.resource.manager.register \
+    int32:1 uint32:2 uint32:2 uint32:2 uint32:2 uint32:2 uint32:2 \
+    string:"foo" uint32:2
+
+The daemon should print out something like this:
+
+
+REGISTER :1.69
+type:      1
+id:        2
+reqno:     2
+mandatory: 2
+optional:  2
+share:     2
+mask:      2
+class:     foo
+mode:      2
+
+ADVICE
+type:      6
+id:        2
+reqno:     2
+resources: 2
+

@@ -102,9 +102,13 @@ class DummyPolicyDaemon(dbus.service.Object):
         print "reqno:    ", str(reqno)
         print "resources:", str(resources)
 
-        resource = self.clients[sender][self.path(id)]
-        resource["dbus"].advice(dbus.Int32(type), dbus.UInt32(id), dbus.UInt32(reqno), dbus.UInt32(resources),
-                reply_handler=self.reply, error_handler=self.error)
+        path = self.path(id)
+
+        if self.clients.has_key(sender):
+            if self.clients[sender].has_key(path):
+                resource = self.clients[sender][self.path(id)]
+                resource["dbus"].advice(dbus.Int32(type), dbus.UInt32(id), dbus.UInt32(reqno), dbus.UInt32(resources),
+                       reply_handler=self.reply, error_handler=self.error)
 
 
     def grant(self, sender, id, reqno, resources):
