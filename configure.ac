@@ -63,8 +63,8 @@ SHAVE_INIT([build-aux], [enable])
 
 AC_CONFIG_FILES([build-aux/shave
 		 build-aux/shave-libtool
-		 libresource0.pc
-		 libresource0-glib.pc
+		 libresource.pc
+		 libresource-glib.pc
 		 Makefile
 		 src/Makefile
 		 client/Makefile

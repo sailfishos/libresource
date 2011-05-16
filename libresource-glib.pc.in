@@ -3,9 +3,9 @@ exec_prefix=${prefix}
 libdir=@libdir@
 includedir=${prefix}/include/resource
 
-Name: libresource0-glib
+Name: libresource-glib
 Description: Maemo resource management high level C API
 Version: @PACKAGE_VERSION@
 Libs: -L${libdir} -lresource-glib -lresource
 Cflags: -I${includedir}
-Requires: glib-2.0 libresource0
+Requires: glib-2.0 libresource
