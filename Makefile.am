@@ -14,3 +14,4 @@ $(top_srcdir)/.version:
 dist-hook:
 	echo $(VERSION) > $(distdir)/.tarball-version
 
+ACLOCAL_AMFLAGS = -I m4
