@@ -8,4 +8,3 @@ Description: Maemo resource management low level C API
 Version: @PACKAGE_VERSION@
 Libs: -L${libdir} -lresource
 Cflags: -I${includedir}
-Requires: dbus-1

@@ -27,11 +27,11 @@ USA.
 #include <sys/types.h>
 #include <res-types.h>
 
-#include <dbus/dbus.h>
-
 #ifdef	__cplusplus
 extern "C" {
 #endif
+
+struct DBusConnection;
 
 typedef struct resource_set_s resource_set_t;
 
@@ -46,7 +46,7 @@ typedef void (*error_callback_function_t)(resource_set_t *resource_set,
                                           const char     *errmsg,
                                           void           *userdata);
 
-int resource_set_use_dbus(DBusConnection *conn);
+int resource_set_use_dbus(struct DBusConnection *conn);
 
 resource_set_t *resource_set_create(const char          *klass,
                                     uint32_t             mandatory,
