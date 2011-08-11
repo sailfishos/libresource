@@ -10,12 +10,13 @@ AC_CONFIG_SRCDIR([src])
 AC_CONFIG_MACRO_DIR([m4])
 
 #AC_CONFIG_AUX_DIR([build-aux])
-AM_INIT_AUTOMAKE(AC_PACKAGE_NAME, AC_PACKAGE_VERSION)
+AM_INIT_AUTOMAKE
 AC_CONFIG_HEADERS([config.h])
 
 AC_SUBST(ACLOCAL_AMFLAGS, "-I m4")
 
 AC_PROG_CC
+AM_PROG_CC_C_O
 AC_PROG_GCC_TRADITIONAL
 AC_GNU_SOURCE
 
@@ -62,8 +63,8 @@ SHAVE_INIT([build-aux], [enable])
 
 AC_CONFIG_FILES([build-aux/shave
 		 build-aux/shave-libtool
-		 libresource0.pc
-		 libresource0-glib.pc
+		 libresource.pc
+		 libresource-glib.pc
 		 Makefile
 		 src/Makefile
 		 client/Makefile
