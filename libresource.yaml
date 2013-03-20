@@ -1,0 +1,28 @@
+Name: libresource
+Summary: MeeGo resource management low level C API libraries
+Version: 0.21.0
+Release: 0
+Group: System/Resource Policy
+License: LGPLv2.1
+URL: http://meego.gitorious.org/maemo-multimedia/libresource
+Sources:
+    - maemo-multimedia-libresource-90fcf739.tar.gz
+
+Description: Resource management for MeeGo. Resource policy client library.
+
+PkgConfigBR:
+    - glib-2.0
+    - dbus-1
+    - dbus-glib-1
+    - check
+Configure: autogen
+Builder: single-make
+AutoSubPackages:
+    - devel
+SubPackages:
+    - Name: client
+      Summary: MeeGo resource aware client test example
+      Group: Development/Tools
+      Description: Resource management for MeeGo. This is a simple test tool to play with resource management.
+
+

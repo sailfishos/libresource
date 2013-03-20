@@ -1,0 +1,22 @@
+* Mon Dec 10 2012 Marko Saukko <marko.saukko@jollamobile.com> - 0.21.0
+- Updated packaging.
+
+* Tue May 29 2012 Marko Saukko <sage@merproject.org> - 0.21.0
+- Merge even more patches from upstream without proper versioning.
+  Tarball matches to commit 90fcf739dcd0aea91f5bed00f8aa35a130fb75fc
+  Version number wasn't changed as the real version number is unknown
+
+* Wed Nov 09 2011 Marko Saukko <marko.saukko@cybercom.com> - 0.21.0
+- Added 11 patches from upstream.
+
+* Wed Dec 08 2010 Kalle Lampila <kalle.lampila@cybercom.com> - 0.21.0
+- Version update
+- Packaging now uses spectacle
+- Part of FEA#6701
+- Packet group changed to System/Resource Policy
+
+* Tue Jun 29 2010 Markus Lehtonen <markus.lehtonen@nokia.com> - 0.1.0
+- Initial import to MeeGo OBS
+
+* Tue Jun 29 2010 Krisztian Litkey <mmf-audio-bounces@projects.maemo.org> -
+- Quick'n dirty initial packaging.
