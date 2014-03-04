@@ -161,7 +161,7 @@ DBusMessage *resmsg_dbus_reply_message(DBusMessage *dbusmsg,resmsg_t *resreply)
                                          DBUS_TYPE_INVALID);
     if (!success) {
         dbus_message_unref(dbusreply);
-        dbusmsg = NULL;
+        dbusreply = NULL;
     }
 
     return dbusreply;

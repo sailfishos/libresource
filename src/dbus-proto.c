@@ -250,9 +250,10 @@ static int send_error(resset_t *rset, resmsg_t *resreply, void *data)
     DBusMessage    *dbusreply;
 
     if (!noreply) {
-        dbusreply = resmsg_dbus_reply_message(dbusmsg, resreply);
-        dbus_connection_send(dcon, dbusreply, &serial);
-        dbus_message_unref(dbusreply);
+        if ((dbusreply = resmsg_dbus_reply_message(dbusmsg, resreply))) {
+            dbus_connection_send(dcon, dbusreply, &serial);
+            dbus_message_unref(dbusreply);
+        }
     }
 
     dbus_message_unref(dbusmsg);
