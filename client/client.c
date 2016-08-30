@@ -910,6 +910,7 @@ static void usage(int exit_code)
     printf("\t\tSnapButton\n");
     printf("\t\tLensCover\n");
     printf("\t\tHeadsetButtons\n");
+    printf("\t\tRearFlashlight\n");
     printf("\t  no whitespace allowed in the resource list.\n");
     printf("\tmodes:\n");
     printf("\t  comma separated list of the following modes\n");
@@ -1027,6 +1028,7 @@ static uint32_t parse_resource_list(char *rlist_str, int exit_if_error)
         { RESMSG_SNAP_BUTTON    ,  "SnapButton"     },
         { RESMSG_LENS_COVER     ,  "LensCover"      },
         { RESMSG_HEADSET_BUTTONS,  "HeadsetButtons" },
+        { RESMSG_REAR_FLASHLIGHT,  "RearFlashlight" },
         {           0           ,       NULL        }
     };
 
