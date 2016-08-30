@@ -1,7 +1,7 @@
 Name:       libresource
 
 Summary:    MeeGo resource management low level C API libraries
-Version:    0.21.0
+Version:    0.23.0
 Release:    0
 Group:      System/Resource Policy
 License:    LGPLv2.1
