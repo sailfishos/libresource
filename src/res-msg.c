@@ -270,6 +270,7 @@ static char *flag_str(uint32_t flag)
     case RESMSG_SNAP_BUTTON:        str = "SnapButton";       break;
     case RESMSG_LENS_COVER:         str = "LensCover";        break;
     case RESMSG_HEADSET_BUTTONS:    str = "HeadsetButtons";   break;
+    case RESMSG_REAR_FLASHLIGHT:    str = "RearFlashlight";   break;
     default:                        str = NULL;               break;
     }
 
