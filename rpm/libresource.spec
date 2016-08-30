@@ -38,6 +38,7 @@ Development files for %{name}.
 %setup -q -n %{name}-%{version}
 
 %build
+echo "%{version}" > .tarball-version
 %autogen --disable-static
 %configure --disable-static
 make
