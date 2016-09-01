@@ -43,7 +43,8 @@ typedef enum {
     resource_snap_button     = 11,
     resource_lens_cover      = 12,
     resource_headset_buttons = 13,
-    resource_large_screen    = 14,
+    resource_rear_flashlight = 14,
+    resource_large_screen    = 15
 } resource_type_t;
 
 
@@ -60,6 +61,7 @@ typedef enum {
 #define RESOURCE_SNAP_BUTTON      RESOURCE_BIT( resource_snap_button )
 #define RESOURCE_LENS_COVER       RESOURCE_BIT( resource_lens_cover )
 #define RESOURCE_HEADSET_BUTTONS  RESOURCE_BIT( resource_headset_buttons )
+#define RESOURCE_REAR_FLASHLIGHT  RESOURCE_BIT( resource_rear_flashlight )
 #define RESOURCE_LARGE_SCREEN     RESOURCE_BIT( resource_large_screen )
 
 typedef enum {

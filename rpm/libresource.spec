@@ -1,7 +1,7 @@
 Name:       libresource
 
 Summary:    MeeGo resource management low level C API libraries
-Version:    0.21.0
+Version:    0.23.0
 Release:    0
 Group:      System/Resource Policy
 License:    LGPLv2.1
@@ -38,6 +38,7 @@ Development files for %{name}.
 %setup -q -n %{name}-%{version}
 
 %build
+echo "%{version}" > .tarball-version
 %autogen --disable-static
 %configure --disable-static
 make
