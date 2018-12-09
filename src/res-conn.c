@@ -66,8 +66,6 @@ static int manager_link_handler(resconn_t *, char *, resproto_linkst_t);
 static int client_link_handler(resconn_t *, char *, resproto_linkst_t);
 
 static void resconn_list_add(resconn_t *);
-static void resconn_list_delete(resconn_t *);
-
 
 
 resconn_t *resconn_init(resproto_role_t       role,
@@ -330,21 +328,6 @@ static void resconn_list_add(resconn_t *rcon)
     if (rcon != NULL) {
         rcon->any.next  = resconn_list;
         resconn_list = rcon;
-    }
-}
-
-static void resconn_list_delete(resconn_t *rcon)
-{
-    resconn_t *prev;
-
-    for (prev = (resconn_t *)&resconn_list;
-         prev->any.next != NULL;
-         prev = prev->any.next)
-    {
-        if (prev->any.next == rcon) {
-            prev->any.next = rcon->any.next;
-            free(rcon);
-        }
     }
 }
 
