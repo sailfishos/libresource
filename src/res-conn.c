@@ -26,6 +26,7 @@ USA.
 #include <stdarg.h>
 
 #include "res-conn-private.h"
+#include "res-set-private.h"
 #include "dbus-proto.h"
 #include "internal-proto.h"
 #include "visibility.h"
@@ -66,8 +67,6 @@ static int manager_link_handler(resconn_t *, char *, resproto_linkst_t);
 static int client_link_handler(resconn_t *, char *, resproto_linkst_t);
 
 static void resconn_list_add(resconn_t *);
-static void resconn_list_delete(resconn_t *);
-
 
 
 resconn_t *resconn_init(resproto_role_t       role,
@@ -203,6 +202,7 @@ resconn_reply_t *resconn_reply_create(resmsg_type_t       type,
         reply->reqno    = reqno;
         reply->callback = status;
         reply->rset     = rset;
+        resset_ref(rset);
                 
         last->next = reply;
     }
@@ -219,7 +219,8 @@ void resconn_reply_destroy(void *ptr)
     resconn_reply_t *prev;
 
     if (reply != NULL) {
-        if ((rset = reply->rset) != NULL && (rcon = rset->resconn) != NULL) {
+        rset = reply->rset;
+        if (rset != NULL && (rcon = rset->resconn) != NULL) {
             for (prev = (void *)&rcon->any.replies;
                  prev->next != NULL;
                  prev = prev->next)
@@ -231,6 +232,7 @@ void resconn_reply_destroy(void *ptr)
                 }
             }
         }
+        resset_unref(rset);
     }    
 }
 
@@ -330,21 +332,6 @@ static void resconn_list_add(resconn_t *rcon)
     if (rcon != NULL) {
         rcon->any.next  = resconn_list;
         resconn_list = rcon;
-    }
-}
-
-static void resconn_list_delete(resconn_t *rcon)
-{
-    resconn_t *prev;
-
-    for (prev = (resconn_t *)&resconn_list;
-         prev->any.next != NULL;
-         prev = prev->any.next)
-    {
-        if (prev->any.next == rcon) {
-            prev->any.next = rcon->any.next;
-            free(rcon);
-        }
     }
 }
 
