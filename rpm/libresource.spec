@@ -34,6 +34,15 @@ Requires:   %{name} = %{version}-%{release}
 Development files for %{name}.
 
 
+%package doc
+Summary:   Documentation for %{name}
+Group:     Documentation
+Requires:  %{name} = %{version}-%{release}
+
+%description doc
+%{summary}.
+
+
 %prep
 %setup -q -n %{name}-%{version}
 
@@ -47,6 +56,10 @@ make
 rm -rf %{buildroot}
 %make_install
 
+mkdir -p %{buildroot}%{_docdir}/%{name}-%{version}
+install -m0644 -t %{buildroot}%{_docdir}/%{name}-%{version} \
+        README AUTHORS NEWS ChangeLog
+
 %post -p /sbin/ldconfig
 
 %postun -p /sbin/ldconfig
@@ -54,7 +67,7 @@ rm -rf %{buildroot}
 %files
 %defattr(-,root,root,-)
 %{_libdir}/libresource*.so.*
-%doc README COPYING INSTALL AUTHORS NEWS ChangeLog
+%license COPYING
 
 %files client
 %defattr(-,root,root,-)
@@ -66,3 +79,7 @@ rm -rf %{buildroot}
 %{_includedir}/resource*
 %{_libdir}/*.so
 %{_libdir}/pkgconfig/libresource*.pc
+
+%files doc
+%defattr(-,root,root,-)
+%{_docdir}/%{name}-%{version}
