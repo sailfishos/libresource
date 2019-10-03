@@ -4,8 +4,8 @@ Summary:    MeeGo resource management low level C API libraries
 Version:    0.23.1
 Release:    0
 Group:      System/Resource Policy
-License:    LGPLv2.1
-URL:        https://github.com/mer-packages/libresource
+License:    LGPLv2
+URL:        https://git.sailfishos.org/mer-core/libresource
 Source0:    %{name}-%{version}.tar.gz
 Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
