@@ -17,7 +17,7 @@ AC_INCLUDES_DEFAULT
 AC_CONFIG_HEADERS([config.h])
 
 #AC_CONFIG_AUX_DIR([build-aux])
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([subdir-objects])
 
 
 m4_define(version_major, `echo $VERSION | cut -d. -f1 | cut -d- -f1`)
