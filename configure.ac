@@ -3,8 +3,7 @@
 AC_PREREQ(2.59)
 
 AC_INIT([libresource],
-	m4_esyscmd([build-aux/git-version-gen .tarball-version]),
-	[multimedia at ok.research.nokia.com])
+	m4_esyscmd([build-aux/git-version-gen .tarball-version]))
 
 AC_CONFIG_SRCDIR([src])
 AC_CONFIG_MACRO_DIR([m4])
