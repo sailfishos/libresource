@@ -40,6 +40,7 @@ AC_CHECK_PROG(have_pkg_config, pkg-config, yes, no)
 
 AS_IF([test x"$have_pkg_config" = "xno"], AC_MSG_ERROR([pkg-config is required to install this library]))
 
+PKG_CHECK_MODULES(GLIB, glib-2.0 >= 2.40)
 # Checks for DBUS.
 PKG_CHECK_MODULES(DBUS, dbus-glib-1 >= 0.70 dbus-1 >= 0.70)
 
