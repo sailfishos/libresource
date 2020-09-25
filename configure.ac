@@ -43,8 +43,6 @@ AS_IF([test x"$have_pkg_config" = "xno"], AC_MSG_ERROR([pkg-config is required t
 
 # Checks for DBUS.
 PKG_CHECK_MODULES(DBUS, dbus-glib-1 >= 0.70 dbus-1 >= 0.70)
-AC_SUBST(DBUS_CFLAGS)
-AC_SUBST(DBUS_LIBS)
 
 # options
 AC_ARG_ENABLE([debug],

@@ -10,5 +10,5 @@ resource_client_CFLAGS = -g3 -O0 -std=c99 -D_POSIX_C_SOURCE=199309L -D_GNU_SOURC
 if DEBUG
 resource_client_CFLAGS += -D__DEBUG__
 endif
-resource_client_LDADD = $(top_builddir)/src/libresource.la @DBUS_LIBS@ -lm -lrt
+resource_client_LDADD = $(top_builddir)/src/libresource.la $(DBUS_LIBS) -lm -lrt
 
