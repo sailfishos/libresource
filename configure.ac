@@ -8,11 +8,6 @@ AC_INIT([libresource],
 
 AC_CONFIG_SRCDIR([src])
 AC_CONFIG_MACRO_DIR([m4])
-
-#AC_CONFIG_AUX_DIR([build-aux])
-AM_INIT_AUTOMAKE
-AC_CONFIG_HEADERS([config.h])
-
 AC_SUBST(ACLOCAL_AMFLAGS, "-I m4")
 
 AC_PROG_CC
@@ -20,6 +15,11 @@ AC_GNU_SOURCE
 
 AC_HEADER_STDC
 AC_INCLUDES_DEFAULT
+AC_CONFIG_HEADERS([config.h])
+
+#AC_CONFIG_AUX_DIR([build-aux])
+AM_INIT_AUTOMAKE
+
 
 m4_define(version_major, `echo $VERSION | cut -d. -f1 | cut -d- -f1`)
 m4_define(version_minor, `echo $VERSION | cut -d. -f2 | cut -d- -f1`)
