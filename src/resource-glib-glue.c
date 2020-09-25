@@ -25,7 +25,7 @@ USA.
 #include <errno.h>
 
 #include <glib.h>
-#include <dbus/dbus-glib-lowlevel.h>
+#include <dbus-gmain/dbus-gmain.h>
 
 #include "resource-glue.h"
 #include "visibility.h"
@@ -35,7 +35,7 @@ DBusConnection *resource_get_dbus_bus(DBusBusType type, DBusError *err)
     DBusConnection *conn = NULL;
 
     if ((conn = dbus_bus_get(type, err)) != NULL) {
-        dbus_connection_setup_with_g_main(conn, NULL);
+        dbus_gmain_set_up_connection(conn, NULL);
     }
 
     return conn;

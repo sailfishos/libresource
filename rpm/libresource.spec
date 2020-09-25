@@ -9,9 +9,8 @@ URL:        https://git.sailfishos.org/mer-core/libresource
 Source0:    %{name}-%{version}.tar.gz
 Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
-BuildRequires:  pkgconfig(glib-2.0)
-BuildRequires:  pkgconfig(dbus-1)
-BuildRequires:  pkgconfig(dbus-glib-1)
+BuildRequires:  pkgconfig(glib-2.0) >= 2.40
+BuildRequires:  pkgconfig(dbus-1) >= 1.8
 BuildRequires:  pkgconfig(check)
 
 %description

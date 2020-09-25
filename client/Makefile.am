@@ -1,5 +1,6 @@
 AM_CPPFLAGS= \
 	-I$(top_srcdir)/src \
+	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS)
 
 bin_PROGRAMS = resource-client
@@ -10,5 +11,8 @@ resource_client_CFLAGS = -g3 -O0 -std=c99 -D_POSIX_C_SOURCE=199309L -D_GNU_SOURC
 if DEBUG
 resource_client_CFLAGS += -D__DEBUG__
 endif
-resource_client_LDADD = $(top_builddir)/src/libresource.la $(DBUS_LIBS) -lm -lrt
-
+resource_client_LDADD = $(top_builddir)/src/libresource.la \
+	$(top_srcdir)/dbus-gmain/libdbus-gmain.la \
+	$(DBUS_LIBS) \
+	-lm \
+	-lrt

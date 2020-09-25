@@ -23,7 +23,8 @@ if DEBUG
 libresource_glib_la_CFLAGS = -D__DEBUG__
 endif
 libresource_glib_la_LDFLAGS = -version-info @LIBRESOURCE_VERSION_INFO@
-libresource_glib_la_LIBADD = $(top_builddir)/src/libresource.la $(DBUS_LIBS)
+libresource_glib_la_LIBADD = $(top_builddir)/src/libresource.la $(DBUS_LIBS) \
+				$(top_srcdir)/dbus-gmain/libdbus-gmain.la
 
 
 pkgincludedir = $(includedir)/resource

@@ -18,6 +18,7 @@ AC_CONFIG_HEADERS([config.h])
 
 #AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([subdir-objects])
+AM_EXTRA_RECURSIVE_TARGETS([dbus-gmain])
 
 
 m4_define(version_major, `echo $VERSION | cut -d. -f1 | cut -d- -f1`)
@@ -41,8 +42,7 @@ AC_CHECK_PROG(have_pkg_config, pkg-config, yes, no)
 AS_IF([test x"$have_pkg_config" = "xno"], AC_MSG_ERROR([pkg-config is required to install this library]))
 
 PKG_CHECK_MODULES(GLIB, glib-2.0 >= 2.40)
-# Checks for DBUS.
-PKG_CHECK_MODULES(DBUS, dbus-glib-1 >= 0.70 dbus-1 >= 0.70)
+PKG_CHECK_MODULES(DBUS, dbus-1 >= 1.8)
 
 # options
 AC_ARG_ENABLE([debug],
@@ -57,7 +57,8 @@ AM_CONDITIONAL([DEBUG], [test x$debug = xtrue])
 # shave
 SHAVE_INIT([build-aux], [enable])
 
-AC_CONFIG_FILES([build-aux/shave
+AC_CONFIG_FILES([dbus-gmain/Makefile
+                 build-aux/shave
 		 build-aux/shave-libtool
 		 libresource.pc
 		 libresource-glib.pc
