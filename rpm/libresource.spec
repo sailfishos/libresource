@@ -72,6 +72,7 @@ install -m0644 -t %{buildroot}%{_docdir}/%{name}-%{version} \
 
 %files devel
 %defattr(-,root,root,-)
+%license COPYING
 %{_includedir}/resource*
 %{_libdir}/*.so
 %{_libdir}/pkgconfig/libresource*.pc
