@@ -1,7 +1,7 @@
 Name:       libresource
 
 Summary:    MeeGo resource management low level C API libraries
-Version:    0.23.1
+Version:    0.24.0
 Release:    0
 License:    LGPLv2
 URL:        https://git.sailfishos.org/mer-core/libresource
