@@ -1,5 +1,5 @@
 EXTRA_DIST = autogen.sh build-aux/git-version-gen
-SUBDIRS    = src client examples tests
+SUBDIRS    = dbus-gmain src client examples tests
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libresource.pc libresource-glib.pc

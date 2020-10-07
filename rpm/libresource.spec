@@ -3,15 +3,13 @@ Name:       libresource
 Summary:    MeeGo resource management low level C API libraries
 Version:    0.23.1
 Release:    0
-Group:      System/Resource Policy
 License:    LGPLv2
 URL:        https://git.sailfishos.org/mer-core/libresource
 Source0:    %{name}-%{version}.tar.gz
 Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
-BuildRequires:  pkgconfig(glib-2.0)
-BuildRequires:  pkgconfig(dbus-1)
-BuildRequires:  pkgconfig(dbus-glib-1)
+BuildRequires:  pkgconfig(glib-2.0) >= 2.40
+BuildRequires:  pkgconfig(dbus-1) >= 1.8
 BuildRequires:  pkgconfig(check)
 
 %description
@@ -19,7 +17,6 @@ Resource management for MeeGo. Resource policy client library.
 
 %package client
 Summary:    MeeGo resource aware client test example
-Group:      Development/Tools
 Requires:   %{name} = %{version}-%{release}
 
 %description client
@@ -27,7 +24,6 @@ Resource management for MeeGo. This is a simple test tool to play with resource 
 
 %package devel
 Summary:    Development files for %{name}
-Group:      Development/Libraries
 Requires:   %{name} = %{version}-%{release}
 
 %description devel
@@ -36,7 +32,6 @@ Development files for %{name}.
 
 %package doc
 Summary:   Documentation for %{name}
-Group:     Documentation
 Requires:  %{name} = %{version}-%{release}
 
 %description doc
@@ -77,6 +72,7 @@ install -m0644 -t %{buildroot}%{_docdir}/%{name}-%{version} \
 
 %files devel
 %defattr(-,root,root,-)
+%license COPYING
 %{_includedir}/resource*
 %{_libdir}/*.so
 %{_libdir}/pkgconfig/libresource*.pc

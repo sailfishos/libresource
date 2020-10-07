@@ -34,7 +34,7 @@ USA.
 
 #include <glib.h>
 #include <dbus/dbus.h>
-#include <dbus/dbus-glib-lowlevel.h>
+#include <dbus-gmain/dbus-gmain.h>
 
 #include <res-conn.h>
 
@@ -565,7 +565,7 @@ static void create_dbus(void)
     if ((dconn = dbus_bus_get(config.bustype, &err)) == NULL)
         print_error("Can't get %s bus", busname);
 
-    dbus_connection_setup_with_g_main(dconn, NULL);
+    dbus_gmain_set_up_connection(dconn, NULL);
 
     print_message("using D-Bus %s bus", busname);
 }

@@ -3,25 +3,23 @@
 AC_PREREQ(2.59)
 
 AC_INIT([libresource],
-	m4_esyscmd([build-aux/git-version-gen .tarball-version]),
-	[multimedia at ok.research.nokia.com])
+	m4_esyscmd([build-aux/git-version-gen .tarball-version]))
 
 AC_CONFIG_SRCDIR([src])
 AC_CONFIG_MACRO_DIR([m4])
-
-#AC_CONFIG_AUX_DIR([build-aux])
-AM_INIT_AUTOMAKE
-AC_CONFIG_HEADERS([config.h])
-
 AC_SUBST(ACLOCAL_AMFLAGS, "-I m4")
 
 AC_PROG_CC
-AM_PROG_CC_C_O
-AC_PROG_GCC_TRADITIONAL
-AC_GNU_SOURCE
+AC_USE_SYSTEM_EXTENSIONS
 
 AC_HEADER_STDC
 AC_INCLUDES_DEFAULT
+AC_CONFIG_HEADERS([config.h])
+
+#AC_CONFIG_AUX_DIR([build-aux])
+AM_INIT_AUTOMAKE([subdir-objects])
+AM_EXTRA_RECURSIVE_TARGETS([dbus-gmain])
+
 
 m4_define(version_major, `echo $VERSION | cut -d. -f1 | cut -d- -f1`)
 m4_define(version_minor, `echo $VERSION | cut -d. -f2 | cut -d- -f1`)
@@ -34,7 +32,7 @@ AC_SUBST(VERSION_PATCH, version_patch)
 AC_SUBST(VERSION_FULL, version_major.version_minor.version_patch)
 
 # libtool API versioning
-AC_PROG_LIBTOOL
+LT_INIT
 LIBRESOURCE_VERSION_INFO="0:18:0"
 AC_SUBST(LIBRESOURCE_VERSION_INFO)
 
@@ -43,10 +41,8 @@ AC_CHECK_PROG(have_pkg_config, pkg-config, yes, no)
 
 AS_IF([test x"$have_pkg_config" = "xno"], AC_MSG_ERROR([pkg-config is required to install this library]))
 
-# Checks for DBUS.
-PKG_CHECK_MODULES(DBUS, dbus-glib-1 >= 0.70 dbus-1 >= 0.70)
-AC_SUBST(DBUS_CFLAGS)
-AC_SUBST(DBUS_LIBS)
+PKG_CHECK_MODULES(GLIB, glib-2.0 >= 2.40)
+PKG_CHECK_MODULES(DBUS, dbus-1 >= 1.8)
 
 # options
 AC_ARG_ENABLE([debug],
@@ -61,7 +57,8 @@ AM_CONDITIONAL([DEBUG], [test x$debug = xtrue])
 # shave
 SHAVE_INIT([build-aux], [enable])
 
-AC_CONFIG_FILES([build-aux/shave
+AC_CONFIG_FILES([dbus-gmain/Makefile
+                 build-aux/shave
 		 build-aux/shave-libtool
 		 libresource.pc
 		 libresource-glib.pc
