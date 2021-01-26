@@ -129,18 +129,21 @@ fi
 
 v=`echo "$v" |sed 's/^v//'`
 
-# Don't declare a version "dirty" merely because a time stamp has changed.
-git status > /dev/null 2>&1
+if [ ! -f $tarball_version_file ]
+then
+    # Don't declare a version "dirty" merely because a time stamp has changed.
+    git status > /dev/null 2>&1
 
-dirty=`sh -c 'git diff-index --name-only HEAD' 2>/dev/null` || dirty=
-case "$dirty" in
-    '') ;;
-    *) # Append the suffix only if there isn't one already.
-	case $v in
-	  *-dirty) ;;
-	  *) v="$v-dirty" ;;
-	esac ;;
-esac
+    dirty=`sh -c 'git diff-index --name-only HEAD' 2>/dev/null` || dirty=
+    case "$dirty" in
+        '') ;;
+        *) # Append the suffix only if there isn't one already.
+          case $v in
+            *-dirty) ;;
+            *) v="$v-dirty" ;;
+          esac ;;
+    esac
+fi
 
 # We default to 0.0.0 instead of UNKNOWN
 if test "x$v" = "xUNKNOWN"; then
