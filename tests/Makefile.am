@@ -8,6 +8,7 @@ TESTS = resource-test
 resource_test_SOURCES = resource-test.c ../src/resource.c
 
 resource_test_LDADD   = -lcheck                                 \
+                        $(top_builddir)/src/libresource.la      \
                         $(DBUS_LIBS)
 
 memory_leak_test_SOURCES = memory-leak-test.c

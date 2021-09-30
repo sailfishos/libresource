@@ -46,6 +46,7 @@ typedef struct resset_s {
     char             *peer;
     uint32_t          id;
     resset_state_t    state;
+    char             *app_id;
     char             *klass;
     uint32_t          mode;
     struct {

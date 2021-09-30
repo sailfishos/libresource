@@ -106,6 +106,7 @@ typedef struct {
 typedef struct {
     RESMSG_COMMON;               /* RESMSG_[REGISTER|UPDATE] */
     resmsg_rset_t     rset;      /* resource set */
+    char             *app_id;    /* mandatory application id */
     char             *klass;     /* optional application class */
     uint32_t          mode;      /* or'ed RESMSG_MODE_xxxx values */
 } resmsg_record_t;
@@ -122,7 +123,7 @@ typedef struct {
 typedef struct {
     RESMSG_COMMON;               /* RESMSG_AUDIO */
     char             *group;     /* group, if any ('' => registered class) */
-    uint32_t          pid;       /* PID of the streaming app, if any */
+    char             *app_id;    /* Application id of the streaming app, if any */
     resmsg_property_t property;  /* audio stream property */
 } resmsg_audio_t;
 
@@ -156,6 +157,7 @@ char *resmsg_res_str(uint32_t, char *, int);
 char *resmsg_mod_str(uint32_t, char *, int);
 char *resmsg_match_method_str(resmsg_match_method_t);
 
+char *resmsg_generate_app_id(pid_t pid);
 
 #ifdef	__cplusplus
 };

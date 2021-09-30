@@ -23,9 +23,11 @@ USA.
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 #include <errno.h>
 
 #include <res-conn.h>
+#include <res-msg.h>
 
 #include "resource.h"
 #include "resource-glue.h"
@@ -67,6 +69,7 @@ typedef struct {
     RESOURCE_CONFIG_COMMON;
     char                    *group;      /* audio group */
     pid_t                    pid;        /* PID of the streaming component */
+    char                    *app_id;     /* application id of the streaming component */
     char                   *stream;     /* pulseaudio stream name */
 } audio_config_t;
 
@@ -94,6 +97,7 @@ typedef struct {
 struct resource_set_s {
     struct resource_set_s   *next;
     DBusConnection          *dbus;       /* D-Bus connection */
+    char                    *app_id;     /* resource application id */
     char                    *klass;      /* resource class */
     uint32_t                 id;         /* resource id */
     uint32_t                 mode;
@@ -197,6 +201,7 @@ EXPORT resource_set_t *resource_set_create(const char          *klass,
             memset(rs, 0, sizeof(resource_set_t));
             rs->next    = rslist;
             rs->dbus    = dbus;
+            rs->app_id  = resource_generate_app_id(getpid());
             rs->klass   = strdup(klass);
             rs->id      = rsid++;
             rs->mode    = mode;
@@ -209,8 +214,9 @@ EXPORT resource_set_t *resource_set_create(const char          *klass,
             
             rslist = rs;
 
-            resource_log("created resource set %u (klass '%s', "
-                         "mandatory %s, optional %s)", rs->id, rs->klass,
+            resource_log("created resource set %u (app_id '%s', klass '%s', "
+                         "mandatory %s, optional %s)",
+                         rs->id, rs->app_id, rs->klass,
                          resmsg_res_str(mandatory, mbuf, sizeof(mbuf)),
                          resmsg_res_str(optional , obuf, sizeof(obuf)));
             
@@ -268,8 +274,9 @@ EXPORT int resource_set_configure_resources(resource_set_t *rs,
         optional = optional & ~mandatory;
         all = mandatory | optional;
 
-        resource_log("updating resource set %u (klass '%s', "
-                     "mandatory %s, optional %s)", rs->id, rs->klass,
+        resource_log("updating resource set %u (app_id '%s', klass '%s', "
+                     "mandatory %s, optional %s)",
+                     rs->id, rs->app_id, rs->klass,
                      resmsg_res_str(mandatory, mbuf, sizeof(mbuf)),
                      resmsg_res_str(optional , obuf, sizeof(obuf)));
 
@@ -527,6 +534,7 @@ static int send_register_message(resource_set_t *rs, uint32_t rn)
         msg.record.reqno    = rn;
         msg.record.rset.all = rs->resources.all;
         msg.record.rset.opt = rs->resources.opt;
+        msg.record.app_id   = rs->app_id;
         msg.record.klass    = rs->klass;
         msg.record.mode     = rs->mode;
 
@@ -576,6 +584,7 @@ static int send_update_message(resource_set_t *rs, uint32_t rn)
         msg.record.reqno    = rn;
         msg.record.rset.all = rs->resources.all;
         msg.record.rset.opt = rs->resources.opt;
+        msg.record.app_id   = rs->app_id;
         msg.record.klass    = rs->klass;
         msg.record.mode     = rs->mode;
 
@@ -606,7 +615,7 @@ static int send_audio_message(resource_set_t *rs, uint32_t rn)
                 msg.audio.id    = rs->id;
                 msg.audio.reqno = rn;
                 msg.audio.group = cfg->audio.group;
-                msg.audio.pid   = cfg->audio.pid;
+                msg.audio.app_id= cfg->audio.app_id;
                 msg.audio.property.name = (char*)"media.name";
                 msg.audio.property.match.method  = resmsg_method_equals;
                 msg.audio.property.match.pattern = stream;
@@ -730,6 +739,7 @@ static void disconnect_complete_cb(resource_set_t *rs, uint32_t no, void *data,
 
             prev->next = rs->next;
 
+            free(rs->app_id);
             free(rs->klass);
 
             for (cfg = rs->configs;  cfg;   cfg = cn) {
@@ -841,6 +851,11 @@ static void config_destroy(resource_config_t *cfg)
     free(cfg);
 }
 
+EXPORT char *resource_generate_app_id(pid_t pid)
+{
+    return resmsg_generate_app_id(pid);
+}
+
 static int audio_config_create(resource_set_t *rs,
                                const char     *group,
                                pid_t           pid,
@@ -855,6 +870,7 @@ static int audio_config_create(resource_set_t *rs,
             cfg->audio.next   = rs->configs;
             cfg->audio.mask   = RESOURCE_AUDIO_PLAYBACK;
             cfg->audio.group  = group ? strdup(group) : NULL;
+            cfg->audio.app_id = resource_generate_app_id(pid);
             cfg->audio.pid    = pid;
             cfg->audio.stream = stream ? strdup(stream) : NULL;
 
@@ -893,6 +909,8 @@ static int audio_config_update(resource_config_t *cfg,
         if (!oldpid || (oldpid && (oldpid != pid))) {
             need_update = TRUE;
             cfg->audio.pid = pid;
+            free(cfg->audio.app_id);
+            cfg->audio.app_id = resource_generate_app_id(pid);
         }
     }
 

@@ -40,6 +40,7 @@ resmsg_t *resmsg_internal_copy_message(resmsg_t *src)
         case RESMSG_REGISTER:
         case RESMSG_UPDATE:
             dst->record = src->record;
+            dst->record.app_id = strdup(src->record.app_id);
             dst->record.klass = strdup(src->record.klass);
             break;
 
@@ -95,6 +96,7 @@ void resmsg_internal_destroy_message(resmsg_t *msg)
 
         case RESMSG_REGISTER:
         case RESMSG_UPDATE:
+            free(msg->record.app_id);
             free(msg->record.klass);
             break;
 

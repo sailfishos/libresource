@@ -82,6 +82,7 @@ int  resource_set_release(resource_set_t *resource_set);
 
 int  resource_set_is_acquiring(resource_set_t *resource_set);
 
+char *resource_generate_app_id(pid_t pid);
 
 #ifdef	__cplusplus
 };
