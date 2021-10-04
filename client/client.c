@@ -309,6 +309,7 @@ static void parse_input(void)
     char     *rs;
     uint32_t  res[4];
     char     *audiogr;
+    char     *app_id;
     uint32_t  pid;
     char     *name;
     char     *value;
@@ -375,6 +376,7 @@ static void parse_input(void)
             msg.record.rset.opt   = res[1];
             msg.record.rset.share = res[2];
             msg.record.rset.mask  = res[3];
+            msg.record.app_id     = "none";
             msg.record.klass      = config.klass;
             manager_send_message(&msg);
         }
@@ -395,11 +397,7 @@ static void parse_input(void)
                 }
             }
 
-            if (!(pid = strtoul(p, &p, 10)) || (*p != ' ' && *p != '\t')) {
-                print_message("invalid pid");
-                break;
-            }
-
+            app_id = skip_whitespaces(p);
             name = skip_whitespaces(p);
 
             if ((p = strchr(name, ':')) == NULL) {
@@ -415,7 +413,7 @@ static void parse_input(void)
             memset(&msg, 0, sizeof(resmsg_t));
             msg.audio.type  = RESMSG_AUDIO;
             msg.audio.group = audiogr;
-            msg.audio.pid   = pid;
+            msg.audio.app_id= app_id;
             msg.audio.property.name = name;
             msg.audio.property.match.method  = resmsg_method_equals;
             msg.audio.property.match.pattern = value; 
@@ -614,6 +612,7 @@ static void connect_to_manager(resconn_t *rc)
     resmsg.record.rset.opt   = config.rset.opt;
     resmsg.record.rset.share = config.rset.share;
     resmsg.record.rset.mask  = config.rset.mask;
+    resmsg.record.app_id     = "none";
     resmsg.record.klass      = config.klass;
     resmsg.record.mode       = config.mode;
 

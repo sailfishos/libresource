@@ -274,6 +274,7 @@ typedef struct {
 struct resource_set_s {
     struct resource_set_s   *next;
     DBusConnection          *dbus;       /* D-Bus connection */
+    char                    *app_id;     /* application id */
     char                    *klass;      /* resource class */
     uint32_t                 id;         /* resource id */
     uint32_t                 mode;

@@ -32,6 +32,7 @@ resset_t *resset_create(resconn_t     *rcon,
                         const char    *peer,
                         uint32_t       id,
                         resset_state_t state,
+                        const char    *app_id,
                         const char    *klass,
                         uint32_t       mode,
                         uint32_t       all,
@@ -50,6 +51,7 @@ resset_t *resset_create(resconn_t     *rcon,
         rset->peer        = strdup(peer);
         rset->id          = id;
         rset->state       = state;
+        rset->app_id      = strdup(app_id);
         rset->klass       = strdup(klass);
         rset->mode        = mode,
         rset->flags.all   = all;
@@ -90,6 +92,7 @@ void resset_unref(resset_t *rset)
                 prev->next = rset->next;
                 
                 free(rset->peer);
+                free(rset->app_id);
                 free(rset->klass);
                 free(rset);
                 

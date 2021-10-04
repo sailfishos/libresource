@@ -23,7 +23,12 @@ USA.
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
+#include <stdint.h>
+#include <inttypes.h>
+#include <limits.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <errno.h>
 
 #include "res-conn-private.h"
 
@@ -83,6 +88,8 @@ EXPORT char *resmsg_dump_message(resmsg_t *resmsg,
         PRINT("rset.opt   : %s"  , resmsg_res_str(rset->opt  ,  r, sizeof(r)));
         PRINT("rset.share : %s"  , resmsg_res_str(rset->share,  r, sizeof(r)));
         PRINT("rset.mask  : %s"  , resmsg_res_str(rset->mask ,  r, sizeof(r)));
+        PRINT("app_id     : '%s'", record->app_id && record->app_id[0] ?
+                                        record->app_id : "<unknown>");
         PRINT("klass      : '%s'", record->klass && record->klass[0] ?
                                         record->klass : "<unknown>");
         PRINT("mode       : %s"  , resmsg_mod_str(record->mode, m, sizeof(m)));
@@ -105,7 +112,7 @@ EXPORT char *resmsg_dump_message(resmsg_t *resmsg,
         property = &audio->property;
         match    = &property->match;
         PRINT("group      : '%s'", audio->group);
-        PRINT("pid        : %u"  , audio->pid);
+        PRINT("app_id     : '%s'", audio->app_id);
         PRINT("property   :");
         PRINT("  name     : '%s'", property->name);
         PRINT("  match    :");
@@ -251,6 +258,59 @@ EXPORT char *resmsg_match_method_str(resmsg_match_method_t method)
 
     return str;
 }
+
+EXPORT char *resmsg_generate_app_id(pid_t pid)
+{
+    char path[256];
+    char line[1024];
+    FILE *f;
+    char *id = NULL;
+
+    snprintf(path, sizeof(path), "/proc/%" PRIdMAX "/stat", (intmax_t) pid);
+    if (!(f = fopen(path, "r"))) {
+        fprintf(stderr, "generate_app_id: can't open %s\n", path);
+        return id;
+    }
+
+    while (fgets(line, sizeof(line), f)) {
+        char *start = line;
+        int field = 1;
+        char *token;
+
+        while ((token = strsep(&start, " "))) {
+            if (field == 22) {
+                int64_t value = 0;
+                char *endptr = NULL;
+                size_t length;
+
+                value = strtoll(token, &endptr, 10);
+
+                if ((errno == ERANGE && (value == LLONG_MAX || value == LLONG_MIN))
+                        || (errno != 0 && value == 0)) {
+                    perror("generate_app_id: strtoll");
+                    goto done;
+                }
+
+                if (endptr == token) {
+                    fprintf(stderr, "generate_app_id: no digits were found in '%s'\n", token);
+                    goto done;
+                }
+
+                length = snprintf(NULL, 0, "%" PRIx64, value) + 1;
+                id = malloc(length);
+                snprintf(id, length, "%" PRIx64, value);
+                break;
+            }
+            field++;
+        }
+    }
+
+done:
+    fclose(f);
+
+    return id;
+}
+
 
 static char *flag_str(uint32_t flag)
 {
