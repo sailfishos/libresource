@@ -24,6 +24,7 @@ USA.
 #define __RES_MESSAGE_H__
 
 #include <stdint.h>
+#include <sys/types.h>
 
 #include <res-types.h>
 
