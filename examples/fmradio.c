@@ -26,6 +26,7 @@ USA.
 #include <glib.h>
 
 #include <resource.h>
+#include <res-msg.h>
 
 static GMainLoop       *main_loop;
 

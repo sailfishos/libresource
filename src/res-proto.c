@@ -27,6 +27,7 @@ USA.
 
 #include <res-proto.h>
 #include "res-conn-private.h"
+#include "res-set-private.h"
 #include "dbus-msg.h"
 #include "dbus-proto.h"
 #include "internal-msg.h"
