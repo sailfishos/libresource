@@ -104,7 +104,7 @@ END_TEST
 
 START_TEST (test_resource_set_configure_audio)
 {
-	resource_set_t *rs, *rs2;
+	resource_set_t *rs;
 
 	// 1.1. should return false when passed not an audio resource
 	rs = resource_set_create("player", RESOURCE_VIDEO_PLAYBACK, 0, 0, grant_callback, 0);
@@ -209,16 +209,6 @@ resset_t  *resSet;
 
 resconn_t* resproto_init(resproto_role_t role, resproto_transport_t transport, ...)
 {
-    resconn_linkup_t callbackFunction;
-    DBusConnection *dbusConnection;
-    va_list args;
-
-    va_start(args, transport);
-    callbackFunction = va_arg(args, resconn_linkup_t);
-
-    dbusConnection = va_arg(args, DBusConnection *);
-    va_end(args);
-
     resourceConnection =(resconn_t *) calloc(1, sizeof(resconn_t));
 
     return resourceConnection;
@@ -371,8 +361,6 @@ int resproto_send_message(resset_t          *rset,
                           resmsg_t          *resmsg,
                           resproto_status_t  status)
 {
-    resconn_t       *rcon = rset->resconn;
-    resmsg_type_t    type = resmsg->type;
     int              success;
 
 	resmsg->any.id = rset->id;

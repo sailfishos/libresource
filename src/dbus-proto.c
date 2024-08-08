@@ -496,7 +496,6 @@ static int register_client_object(resconn_dbus_t *rcon, uint32_t id)
 static int unregister_client_object(resconn_dbus_t *rcon, uint32_t id)
 {
     char path[1024];
-    int  success;
 
     snprintf(path, sizeof(path), RESPROTO_DBUS_CLIENT_PATH, id);
 

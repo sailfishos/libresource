@@ -58,17 +58,10 @@ static void advice_callback (resource_set_t *resource_set,
 static gboolean destructor (void *data)
 {
   printf("destructor\n");
-    resource_set_t *resource_set = data;
 
     g_main_loop_quit(main_loop);
 
     return FALSE;
-}
-
-static void schedule_destruction (resource_set_t *resource_set, guint ms)
-{
-  printf("schedule_destruction\n");
-    g_timeout_add (ms, destructor, resource_set);
 }
 
 static void create_mainloop (void)

@@ -58,7 +58,6 @@ EXPORT char *resmsg_dump_message(resmsg_t *resmsg,
     char  m[512];
     resmsg_rset_t     *rset;
     resmsg_record_t   *record;
-    resmsg_possess_t  *possess;
     resmsg_notify_t   *notify;
     resmsg_audio_t    *audio;
     resmsg_video_t    *video;
@@ -93,12 +92,6 @@ EXPORT char *resmsg_dump_message(resmsg_t *resmsg,
         PRINT("klass      : '%s'", record->klass && record->klass[0] ?
                                         record->klass : "<unknown>");
         PRINT("mode       : %s"  , resmsg_mod_str(record->mode, m, sizeof(m)));
-        break;
-
-    case RESMSG_UNREGISTER:
-    case RESMSG_ACQUIRE:
-    case RESMSG_RELEASE:
-        possess = &resmsg->possess;
         break;
 
     case RESMSG_GRANT:
