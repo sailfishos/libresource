@@ -4,7 +4,7 @@ Summary:    MeeGo resource management low level C API libraries
 Version:    0.25.0
 Release:    0
 License:    LGPLv2
-URL:        https://git.sailfishos.org/mer-core/libresource
+URL:        https://github.com/sailfishos/libresource/
 Source0:    %{name}-%{version}.tar.gz
 Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
@@ -48,7 +48,6 @@ echo "%{version}" > .tarball-version
 make
 
 %install
-rm -rf %{buildroot}
 %make_install
 rm -f %{buildroot}/%{_libdir}/*.la
 
@@ -61,22 +60,18 @@ install -m0644 -t %{buildroot}%{_docdir}/%{name}-%{version} \
 %postun -p /sbin/ldconfig
 
 %files
-%defattr(-,root,root,-)
 %{_libdir}/libresource*.so.*
 %license COPYING
 
 %files client
-%defattr(-,root,root,-)
 %{_bindir}/resource-client
 %{_bindir}/fmradio
 
 %files devel
-%defattr(-,root,root,-)
 %license COPYING
 %{_includedir}/resource*
 %{_libdir}/*.so
 %{_libdir}/pkgconfig/libresource*.pc
 
 %files doc
-%defattr(-,root,root,-)
 %{_docdir}/%{name}-%{version}
