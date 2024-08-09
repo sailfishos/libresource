@@ -121,7 +121,6 @@ static input_t          input;
 static DBusConnection  *dconn;
 static resconn_t       *rconn;
 static resset_t        *rset;
-static uint32_t         rid;
 static uint32_t         reqno; 
 static resmsg_type_t    reqtyp[REQHASH_DIM];
 static int              flood;

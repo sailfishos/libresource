@@ -141,8 +141,6 @@ static void            connect_complete_cb(resource_set_t *, uint32_t, void *,
                                            int32_t, const char *);
 static void            disconnect_complete_cb(resource_set_t *, uint32_t,
                                               void *, int32_t, const char *);
-static void            request_complete_cb(resource_set_t *, uint32_t,
-                                           void *, int32_t, const char *);
 static void            status_cb(resset_t *, resmsg_t *);
 static void            send_request(resource_set_t *);
 static void            config_destroy(resource_config_t *);
@@ -756,16 +754,6 @@ static void disconnect_complete_cb(resource_set_t *rs, uint32_t no, void *data,
 
             return;
         }
-    }
-}
-
-static void request_complete_cb(resource_set_t *rs, uint32_t rn, void *data,
-                                int32_t errcod, const char *errmsg)
-{
-    resource_log("request %u completed. status %d %s", rn, errcod, errmsg);
-
-    if (errcod != 0) {
-        rs->grantcb.function(rs, 0, rs->grantcb.data);
     }
 }
 
